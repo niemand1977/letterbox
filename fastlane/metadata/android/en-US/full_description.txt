@@ -1,0 +1,2 @@
+LetterBox is a game about animals and letters.
+It shows an animal and your task is to find the appropriate letter.
