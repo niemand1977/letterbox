@@ -29,12 +29,6 @@ class AnimalsOnTop : AppCompatActivity() {
         return makeDrawable(letter_resource_map.get(char) ?: 0)
     }
 
-    fun pop (set: MutableCollection<Char>) : Char {
-        val e = set.random()
-        set.remove(e)
-        return e
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -95,7 +89,7 @@ class AnimalsOnTop : AppCompatActivity() {
         }
 
         val mut_set = ('A'..'Z').toMutableSet()
-        val chosenLetter = pop(mut_set)
+        val chosenLetter = mut_set.pop()
         Log.e(TAG, "Chosen letter " + chosenLetter)
 
 
@@ -107,10 +101,10 @@ class AnimalsOnTop : AppCompatActivity() {
         val correctResourceId: Int = mut_map.remove(chosenLetter) ?: R.drawable.apple
         val correctResource = ResourcesCompat.getDrawable(getResources(), correctResourceId, null);
 
-        val wrongResource1Key = pop(mut_set)
+        val wrongResource1Key = mut_set.pop()
         Log.e(TAG, "Chosen wrong Key " + wrongResource1Key)
 
-        val wrongResource2Key = pop(mut_set)
+        val wrongResource2Key = mut_set.pop()
         Log.e(TAG, "Chosen other wrong Key " + wrongResource2Key)
 
         /* This is the suffled list of buttons, so it's random, hopefully */
