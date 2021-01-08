@@ -23,6 +23,4 @@
             </intent-filter>
         </activity>
     </application>
-    <!-- The Internet permissions seems to be relevant for older (Android 4 and 5) devices as without it they don't even install the app -->
-    <uses-permission android:name="android.permission.INTERNET"/>
 </manifest>
