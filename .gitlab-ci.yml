@@ -32,5 +32,4 @@ build_debug:
 test:
   stage: test
   script:
-    - make
     - ./gradlew test
