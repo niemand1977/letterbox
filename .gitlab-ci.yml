@@ -17,7 +17,7 @@ before_script:
   - sudo apt-get update || apt-get update
   - sudo apt-get install -y librsvg2-bin || apt-get install -y librsvg2-bin
   - export GRADLE_USER_HOME=$(pwd)/.gradle
-  - chmod +x ./gradlew
+  - sudo chmod +x ./gradlew || chmod +x ./gradlew
 
 build_debug:
   stage: build
