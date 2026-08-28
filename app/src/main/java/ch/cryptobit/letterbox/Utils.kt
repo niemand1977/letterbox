@@ -3,28 +3,21 @@ package ch.cryptobit.letterbox
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.drawable.Drawable
 import android.media.AudioAttributes
-import android.media.AudioManager
 import android.media.SoundPool
-import android.os.Build
-import androidx.core.content.res.ResourcesCompat
+
 
 fun soundPool(): SoundPool {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        SoundPool.Builder()
-            .setMaxStreams(2)
-            .setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .setFlags(AudioAttributes.USAGE_GAME)
-                    .setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED)
-                    .build()
-            )
-            .build()
-    } else {
-        SoundPool(2, AudioManager.STREAM_MUSIC, 0)
-    }
+    return SoundPool.Builder()
+        .setMaxStreams(2)
+        .setAudioAttributes(
+            AudioAttributes.Builder()
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .setUsage(AudioAttributes.USAGE_GAME)
+                .setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED)
+                .build()
+        )
+        .build()
 }
 
 
