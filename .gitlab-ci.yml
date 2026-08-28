@@ -1,0 +1,34 @@
+image: cimg/android:2023.05.1
+
+variables:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+
+cache:
+  key: ${CI_PROJECT_ID}
+  paths:
+    - .gradle/wrapper
+    - .gradle/caches
+
+stages:
+  - build
+  - test
+
+before_script:
+  - export GRADLE_USER_HOME=$(pwd)/.gradle
+  - chmod +x ./gradlew
+
+build_debug:
+  stage: build
+  script:
+    - make
+    - ./gradlew assembleDebug
+  artifacts:
+    paths:
+      - app/build/outputs/apk/debug/app-debug.apk
+    expire_in: 1 week
+
+test:
+  stage: test
+  script:
+    - make
+    - ./gradlew test
