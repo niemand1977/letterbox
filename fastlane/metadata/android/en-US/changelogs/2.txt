@@ -1,0 +1,4 @@
+- Modernized Android build to target Android 14 (API 34).
+- Added reproducible GitLab CI pipeline.
+- Fixed compatibility with modern Android versions.
+- Added a README.
