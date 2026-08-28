@@ -5,13 +5,13 @@ apply plugin: 'kotlin-android'
 android {
     namespace 'ch.cryptobit.letterbox'
 
-    compileSdkVersion 33
+    compileSdkVersion 34
     
 
     defaultConfig {
         applicationId "ch.cryptobit.letterbox"
         minSdkVersion 19
-        targetSdkVersion 33
+        targetSdkVersion 34
         versionCode 1
         versionName "0.0.3"
 
