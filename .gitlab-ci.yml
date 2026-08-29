@@ -2,6 +2,7 @@ image: cimg/android:2026.08.1
 
 variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+  APK: app/build/outputs/apk/debug/app-debug.apk
 
 cache:
   key: ${CI_PROJECT_ID}
@@ -12,6 +13,7 @@ cache:
 stages:
   - build
   - test
+  - release
 
 before_script:
   - sudo apt-get update || apt-get update
@@ -24,12 +26,80 @@ build_debug:
   script:
     - make
     - ./gradlew assembleDebug
+    # Compute checksum immediately after build for binary transparency
+    - sha256sum "$APK" | tee SHA256SUMS
   artifacts:
     paths:
       - app/build/outputs/apk/debug/app-debug.apk
-    expire_in: 1 week
+      - SHA256SUMS
+    expire_in: 4 weeks
 
 test:
   stage: test
   script:
     - ./gradlew test
+
+# Publish a GitLab Release on every version tag (e.g. 0.1.0, 1.2.3)
+# Uploads the APK and its SHA256 checksum to the Package Registry for a
+# permanent, immutable URL — enabling binary transparency: anyone can
+# download the APK, check its hash, and verify it matches what CI built
+# from that exact commit.
+release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+/'
+  needs:
+    - job: build_debug
+      artifacts: true
+  script:
+    - apk add --no-cache curl   # alpine-based release-cli image
+
+    # Upload APK to Package Registry (permanent URL)
+    - |
+      curl --fail --silent --show-error \
+           --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+           --upload-file "$APK" \
+           "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/letterbox/${CI_COMMIT_TAG}/app-debug.apk"
+
+    # Upload the checksum file
+    - |
+      curl --fail --silent --show-error \
+           --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+           --upload-file SHA256SUMS \
+           "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/letterbox/${CI_COMMIT_TAG}/SHA256SUMS"
+
+    # Build release description with checksum embedded
+    - SHA256=$(awk '{print $1}' SHA256SUMS)
+    - APK_URL="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/letterbox/${CI_COMMIT_TAG}/app-debug.apk"
+    - SUMS_URL="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/letterbox/${CI_COMMIT_TAG}/SHA256SUMS"
+    - |
+      cat > release-notes.md << NOTES
+      ## LetterBox ${CI_COMMIT_TAG}
+
+      A children's game to learn the letters of the alphabet.
+
+      ### 🔐 Binary Transparency
+
+      This APK was built by GitLab CI directly from tag \`${CI_COMMIT_TAG}\`
+      (pipeline [#${CI_PIPELINE_ID}](${CI_PROJECT_URL}/-/pipelines/${CI_PIPELINE_ID})).
+
+      SHA-256 of \`app-debug.apk\`:
+      \`\`\`
+      ${SHA256}  app-debug.apk
+      \`\`\`
+
+      Verify after downloading:
+      \`\`\`
+      sha256sum -c SHA256SUMS
+      \`\`\`
+      NOTES
+
+    # Create the release
+    - |
+      release-cli create \
+        --name "LetterBox ${CI_COMMIT_TAG}" \
+        --tag-name "${CI_COMMIT_TAG}" \
+        --description-file release-notes.md \
+        --assets-link "{\"name\":\"app-debug.apk\",\"url\":\"${APK_URL}\",\"link_type\":\"package\"}" \
+        --assets-link "{\"name\":\"SHA256SUMS\",\"url\":\"${SUMS_URL}\",\"link_type\":\"other\"}"
