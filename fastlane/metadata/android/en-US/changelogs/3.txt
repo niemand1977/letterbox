@@ -1,0 +1,4 @@
+- Modernized build system to Android 14 (API 34), Gradle 8.9, AGP 8.5.2 and Kotlin 1.9.24.
+- Fixed UI text scaling, letter clipping, and sound playback delay.
+- Added visual tap color animation and seamless in-place round updates.
+- Added automated GitLab CI with release packaging and binary transparency.
