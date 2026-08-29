@@ -1,4 +1,4 @@
-image: cimg/android:2023.05.1
+image: cimg/android:2026.08.1
 
 variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
