@@ -1,16 +1,18 @@
 # LetterBox
 
-A simple Android game for kids to learn letters. An animal image is shown and the child picks the correct starting letter from three options. Correct and incorrect answers are reinforced with sound feedback.
+A simple Android game for kids to learn letters. An animal image is shown and the child picks the correct starting letter from three options. Correct and incorrect answers are reinforced with sound and color feedback.
+
+```
+ ┌───┬───┐
+ │ A │ B │   Tap the letter that matches the animal!
+ ├───┼───┤
+ │ C │ ? │
+ └───┴───┘
+```
 
 ## How It Works
 
-The app has two activity modes:
-
-- **AnimalsOnTop** (`AnimalsOnTop.kt`) — The active mode. Displays an animal image at the top and three letter buttons below. The child taps the letter that matches the animal's name. A random letter A–Z is chosen, and the corresponding animal image is shown (e.g. **A** → apple, **B** → bear, **C** → chameleon). Two wrong letters are randomly selected from the remaining alphabet. Tapping the correct letter plays a "yes" sound; a wrong letter plays a "no" sound. The activity then recreates itself with a new round.
-
-- **MainActivity** (`MainActivity.kt`) — The legacy mode. Shows a large letter at the top and three animal image buttons below. The child picks the animal whose name starts with the displayed letter. This mode is currently disabled (`ANIMALS_ON_TOP = true` in `MainActivity.kt` redirects to AnimalsOnTop).
-
-- **LettersOnTop** (`LettersOnTop.kt`) — A fullscreen activity template with system UI auto-hide. Not actively used in the current game flow.
+**AnimalsOnTop** (`AnimalsOnTop.kt`) — Displays an animal image at the top and three letter buttons below. The child taps the letter that matches the animal's name. A random letter A–Z is chosen, the corresponding animal image is shown (e.g. **A** → apple, **B** → bear). Two wrong letters are randomly selected. Tapping correct plays a "yes" sound + green flash; wrong plays a "no" sound + red flash. A new round loads in-place (no screen flash).
 
 ### Letter-to-Animal Mapping
 
@@ -37,9 +39,9 @@ Both are loaded via `SoundPool` with game audio attributes.
 
 ## Tech Stack
 
-- **Language:** Kotlin
-- **Build:** Gradle 8.7, AGP 8.2.0
-- **Min SDK:** 19 (Android 4.4)
+- **Language:** Kotlin 1.9.24
+- **Build:** Gradle 8.9, AGP 8.5.2
+- **Min SDK:** 21 (Android 5.0)
 - **Target SDK:** 34 (Android 14)
 - **UI:** AndroidX AppCompat, ConstraintLayout
 - **Images:** PNG (400×400), converted from SVG sources via `rsvg-convert`
@@ -55,21 +57,20 @@ letterbox/
 │       └── main/
 │           ├── AndroidManifest.xml
 │           ├── java/ch/cryptobit/letterbox/
-│           │   ├── MainActivity.kt     # Legacy mode (letter → pick animal)
-│           │   ├── AnimalsOnTop.kt     # Active mode (animal → pick letter)
-│           │   ├── LettersOnTop.kt     # Fullscreen template (unused)
-│           │   └── Utils.kt            # SoundPool, letter-animal map, helpers
+│           │   ├── AnimalsOnTop.kt     # Main game activity
+│           │   └── Utils.kt            # SoundPool, letter-animal map
 │           └── res/
-│               ├── drawable/           # Animal PNGs (A–Z)
-│               ├── drawable/src/       # Original SVG sources (Pixabay)
+│               ├── drawable/           # Animal PNGs (A–Z) + launcher icon
+│               ├── drawable/src/       # Original SVG sources (Pixabay + logo)
+│               ├── mipmap-*/           # Launcher icon at each density
 │               ├── layout/             # Activity layouts
 │               ├── raw/                # Sound effects (yes/no)
-│               └── values/             # Strings, colors, styles, attrs
+│               └── values/             # Strings, colors, styles
 ├── build.gradle                        # Root build config
 ├── settings.gradle                     # Project settings
 ├── gradle.properties                   # Gradle/AndroidX config
-├── Makefile                            # SVG → PNG conversion
-├── fastlane/                           # F-Droid deployment metadata
+├── Makefile                            # SVG → PNG conversion (assets + icons)
+├── fastlane/                           # F-Droid / store metadata + icon
 └── LICENSE                             # GPL-3.0
 ```
 
@@ -78,8 +79,8 @@ letterbox/
 ### Prerequisites
 
 - Android SDK with platform 34 and build-tools 34.0.0
-- JDK 17+
-- `rsvg-convert` (only needed to regenerate images from SVGs)
+- JDK 21
+- `rsvg-convert` (`librsvg2-bin`) — needed to regenerate images/icons from SVGs
 
 ### Build the APK
 
@@ -89,17 +90,31 @@ letterbox/
 
 Output: `app/build/outputs/apk/debug/app-debug.apk`
 
-### Regenerate Images from SVGs
+### Regenerate Images and Icons from SVGs
 
 ```bash
 make
 ```
 
-This converts all SVG files in `app/src/main/res/drawable/src/` to 400×400 PNGs in `app/src/main/res/drawable/`.
+This runs two targets:
+- **`assets`** — converts all animal SVGs in `app/src/main/res/drawable/src/` to 400×400 PNGs
+- **`icons`** — converts `ic_launcher.svg` to all required mipmap densities (mdpi → xxxhdpi) and to `fastlane/metadata/android/en-US/images/icon.png` (512×512)
+
+## CI / Releases
+
+GitLab CI builds debug and release APKs on every push. On version tags (e.g. `0.1.1`) it additionally:
+
+- Uploads both APKs and their SHA-256 checksums to the GitLab Package Registry (permanent URLs)
+- Creates a GitLab Release with the hashes embedded — enabling **binary transparency**
+
+Verify a downloaded APK:
+```bash
+sha256sum -c SHA256SUMS.release
+```
 
 ## Deployment
 
-Fastlane is configured for F-Droid. Metadata lives in `fastlane/metadata/android/en-US/`.
+Fastlane metadata lives in `fastlane/metadata/android/en-US/`. The app is available via [F-Droid](https://f-droid.org/packages/ch.cryptobit.letterbox/).
 
 ## License
 

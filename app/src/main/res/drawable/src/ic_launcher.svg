@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background: light warm grey, rounded square -->
+  <rect width="512" height="512" rx="80" fill="#E9EDF1"/>
+
+  <!-- Tile A (top-left): slate blue-grey -->
+  <rect x="34" y="34" width="210" height="210" rx="28" fill="#5C6B7D"/>
+  <!-- Letter A -->
+  <text x="139" y="179"
+        font-family="sans-serif" font-weight="700" font-size="148"
+        fill="#E9EDF1" text-anchor="middle" dominant-baseline="auto">A</text>
+
+  <!-- Tile B (top-right) -->
+  <rect x="268" y="34" width="210" height="210" rx="28" fill="#5C6B7D"/>
+  <!-- Letter B -->
+  <text x="373" y="179"
+        font-family="sans-serif" font-weight="700" font-size="148"
+        fill="#E9EDF1" text-anchor="middle" dominant-baseline="auto">B</text>
+
+  <!-- Tile C (bottom-left) -->
+  <rect x="34" y="268" width="210" height="210" rx="28" fill="#5C6B7D"/>
+  <!-- Letter C -->
+  <text x="139" y="413"
+        font-family="sans-serif" font-weight="700" font-size="148"
+        fill="#E9EDF1" text-anchor="middle" dominant-baseline="auto">C</text>
+
+  <!-- Tile ? (bottom-right): slightly lighter to hint "unknown" -->
+  <rect x="268" y="268" width="210" height="210" rx="28" fill="#7A8EA3"/>
+  <!-- Question mark -->
+  <text x="373" y="413"
+        font-family="sans-serif" font-weight="700" font-size="148"
+        fill="#E9EDF1" text-anchor="middle" dominant-baseline="auto">?</text>
+</svg>
