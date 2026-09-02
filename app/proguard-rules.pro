@@ -1,21 +1,10 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
+# LetterBox ProGuard / R8 rules
 #
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Shrinking is enabled; obfuscation is disabled in build.gradle so that
+# stack traces remain human-readable (this is Free Software).
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Keep source file names and line numbers for meaningful stack traces.
+-keepattributes SourceFile,LineNumberTable
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
-
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# No obfuscation — names are kept as-is.
+-dontobfuscate
