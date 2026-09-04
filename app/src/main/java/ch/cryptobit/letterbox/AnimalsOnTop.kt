@@ -3,10 +3,12 @@ package ch.cryptobit.letterbox
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.graphics.Color
+import android.graphics.Paint
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.util.TypedValue
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -25,6 +27,7 @@ class AnimalsOnTop : AppCompatActivity() {
 
     private lateinit var imageWidget: ImageView
     private lateinit var letterWidgets: List<TextView>
+    private lateinit var lettersContainer: View
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,6 +39,11 @@ class AnimalsOnTop : AppCompatActivity() {
             findViewById(R.id.mainLetter2),
             findViewById(R.id.mainLetter3)
         )
+        lettersContainer = findViewById(R.id.lettersContainer)
+
+        lettersContainer.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            updateLetterTextSize()
+        }
 
         // Hide buttons until sounds are ready
         setButtonsVisible(false)
@@ -54,7 +62,44 @@ class AnimalsOnTop : AppCompatActivity() {
         soundNo = soundPool.load(this, R.raw.no, 1)
     }
 
+    /**
+     * Dynamically compute the optimal font size so all 3 letter buttons have a
+     * uniform, beautifully proportioned text size that is guaranteed to fit any
+     * letter in 'A'..'Z' without horizontal or vertical clipping.
+     */
+    private fun updateLetterTextSize() {
+        val button = letterWidgets.firstOrNull() ?: return
+        if (button.width <= 0 || button.height <= 0) return
+
+        val availableWidth = (button.width - button.paddingLeft - button.paddingRight).coerceAtLeast(1)
+        val availableHeight = (button.height - button.paddingTop - button.paddingBottom).coerceAtLeast(1)
+
+        val testPaint = Paint().apply {
+            typeface = button.typeface
+            textSize = 100f
+        }
+
+        // Measure widest letter (typically 'W' or 'M') and font height at 100px
+        var maxCharWidth = 0f
+        for (c in 'A'..'Z') {
+            val w = testPaint.measureText(c.toString())
+            if (w > maxCharWidth) maxCharWidth = w
+        }
+        val fontMetrics = testPaint.fontMetrics
+        val fontHeight = fontMetrics.descent - fontMetrics.ascent
+
+        // Scale so that even the widest and tallest characters fit with 20% breathing room
+        val scaleW = (availableWidth * 0.80f) / maxCharWidth
+        val scaleH = (availableHeight * 0.80f) / fontHeight
+        val optimalSizePx = 100f * minOf(scaleW, scaleH)
+
+        for (widget in letterWidgets) {
+            widget.setTextSize(TypedValue.COMPLEX_UNIT_PX, optimalSizePx)
+        }
+    }
+
     private fun loadRound() {
+        updateLetterTextSize()
         val shuffledButtons = letterWidgets.shuffled()
 
         val letters = ('A'..'Z').toMutableSet()

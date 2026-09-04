@@ -10,7 +10,7 @@ all: assets icons
 
 assets:
 	$(foreach svg,$(SVGs),\
-		rsvg-convert --keep-aspect-ratio --width=400 --height=400  --output app/src/main/res/drawable/$$(echo $(svg) | cut -f1 -d-).png  app/src/main/res/drawable/src/$(svg); \
+		rsvg-convert --keep-aspect-ratio --width=1000 --height=1000 app/src/main/res/drawable/src/$(svg) | convert - -trim +repage -resize 400x400\> app/src/main/res/drawable/$$(echo $(svg) | cut -f1 -d-).png; \
 	)
 
 icons: $(LAUNCHER_SVG)
