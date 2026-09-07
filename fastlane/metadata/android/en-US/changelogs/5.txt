@@ -1,0 +1,3 @@
+- Fixed letters being cut off on the answer buttons; the letter size now adapts to the button so every letter A–Z fits.
+- Animal pictures are now trimmed and centred automatically, fixing off-centre images (e.g. the jellyfish).
+- Regenerated all animal images at higher quality.
