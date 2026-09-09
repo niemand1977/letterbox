@@ -28,6 +28,9 @@ class AnimalsOnTop : AppCompatActivity() {
     private lateinit var imageWidget: ImageView
     private lateinit var letterWidgets: List<TextView>
     private lateinit var lettersContainer: View
+    // Tracks the animal/letter shown last round so loadRound() can rule it out,
+    // preventing the same animal from appearing twice in a row.
+    private var previousLetter: Char? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -103,7 +106,12 @@ class AnimalsOnTop : AppCompatActivity() {
         val shuffledButtons = letterWidgets.shuffled()
 
         val letters = ('A'..'Z').toMutableSet()
+        // Remove the previous round's letter before picking, so the next
+        // animal is guaranteed to differ from the one just shown.
+        previousLetter?.let { letters.remove(it) }
         val chosenLetter = letters.pop()
+        // Remember this round's letter for the next exclusion check.
+        previousLetter = chosenLetter
         Log.d(TAG, "Chosen letter $chosenLetter")
 
         imageWidget.setImageDrawable(
