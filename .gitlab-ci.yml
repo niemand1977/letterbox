@@ -53,6 +53,24 @@ test:
   script:
     - ./gradlew test
 
+# Manual "release" button, shown as a Play icon on master's pipeline.
+# Tags the current commit with the version from app/build.gradle and pushes
+# it; the pushed tag starts a new pipeline whose "release" job below (which
+# triggers on version tags) then builds and publishes it.
+tag_release:
+  stage: release
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: manual
+  before_script: []
+  cache: {}
+  script:
+    - VERSION=$(grep -oP 'versionName\s+"\K[^"]+' app/build.gradle)
+    - echo "Tagging release $VERSION"
+    - git remote set-url origin "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+    - git tag "$VERSION"
+    - git push origin "$VERSION"
+
 # Publish a GitLab Release on every version tag (e.g. 0.1.1)
 # Uploads the APKs and SHA256 checksums to the Package Registry for a
 # permanent, immutable URL — enabling binary transparency.
