@@ -53,6 +53,51 @@ test:
   script:
     - ./gradlew test
 
+# Manual "release" button, shown as a Play icon on master's pipeline.
+# Tags the current commit with the version from app/build.gradle and pushes
+# it; the pushed tag starts a new pipeline whose "release" job below (which
+# triggers on version tags) then builds and publishes it.
+tag_release:
+  stage: release
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: manual
+  before_script: []
+  cache: {}
+  script:
+    # Shallow clones may not have the last release's commit; fetch full
+    # history and tags so the versionCode comparison below can see it.
+    - git fetch --unshallow --tags 2>/dev/null || git fetch --tags
+
+    - VERSION=$(grep -oP 'versionName\s+"\K[^"]+' app/build.gradle)
+    - VERSION_CODE=$(grep -oP 'versionCode\s+\K\d+' app/build.gradle)
+    - echo "HEAD is versionName=$VERSION versionCode=$VERSION_CODE"
+
+    - |
+      if git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null; then
+        echo "Tag $VERSION already exists -- bump versionName in app/build.gradle first." >&2
+        exit 1
+      fi
+
+    # Refuse to release unless versionCode grew since the last release tag,
+    # so an app update is never silently skipped by the Android/F-Droid
+    # update checker (which keys off versionCode, not versionName).
+    - LAST_TAG=$(git tag --list --sort=-v:refname | grep -P '^\d+\.\d+\.\d+$' | head -1 || true)
+    - |
+      if [ -n "$LAST_TAG" ]; then
+        LAST_VERSION_CODE=$(git show "$LAST_TAG:app/build.gradle" | grep -oP 'versionCode\s+\K\d+')
+        echo "Last release $LAST_TAG had versionCode=$LAST_VERSION_CODE"
+        if [ "$VERSION_CODE" -le "$LAST_VERSION_CODE" ]; then
+          echo "versionCode ($VERSION_CODE) must be greater than the last release's ($LAST_VERSION_CODE) -- bump versionCode in app/build.gradle." >&2
+          exit 1
+        fi
+      fi
+
+    - echo "Tagging release $VERSION"
+    - git remote set-url origin "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+    - git tag "$VERSION"
+    - git push origin "$VERSION"
+
 # Publish a GitLab Release on every version tag (e.g. 0.1.1)
 # Uploads the APKs and SHA256 checksums to the Package Registry for a
 # permanent, immutable URL — enabling binary transparency.
