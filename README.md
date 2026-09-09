@@ -41,10 +41,10 @@ Both are loaded via `SoundPool` with game audio attributes.
 
 - **Language:** Kotlin 1.9.24
 - **Build:** Gradle 8.9, AGP 8.5.2
-- **Min SDK:** 21 (Android 5.0)
+- **Min SDK:** 23 (Android 6.0)
 - **Target SDK:** 34 (Android 14)
 - **UI:** AndroidX AppCompat, ConstraintLayout
-- **Images:** PNG (400×400), converted from SVG sources via `rsvg-convert`
+- **Images:** PNG (max 400×400), converted from SVG sources via `rsvg-convert` and auto-trimmed with ImageMagick/GraphicsMagick
 - **License:** GPL-3.0
 
 ## Project Structure
@@ -81,6 +81,7 @@ letterbox/
 - Android SDK with platform 34 and build-tools 34.0.0
 - JDK 21
 - `rsvg-convert` (`librsvg2-bin`) — needed to regenerate images/icons from SVGs
+- `convert` (ImageMagick, or `graphicsmagick-imagemagick-compat`) — trims and downsizes the rasterized animal PNGs
 
 ### Build the APK
 
@@ -97,7 +98,7 @@ make
 ```
 
 This runs two targets:
-- **`assets`** — converts all animal SVGs in `app/src/main/res/drawable/src/` to 400×400 PNGs
+- **`assets`** — rasterizes all animal SVGs in `app/src/main/res/drawable/src/` at 1000×1000, then pipes them through `convert -trim +repage -resize 400x400>` to strip transparent padding and downsize to at most 400×400 PNGs
 - **`icons`** — converts `ic_launcher.svg` to all required mipmap densities (mdpi → xxxhdpi) and to `fastlane/metadata/android/en-US/images/icon.png` (512×512)
 
 ## CI / Releases
