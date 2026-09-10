@@ -2,12 +2,16 @@ package ch.cryptobit.letterbox
 
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
+import android.app.AlertDialog
 import android.graphics.Color
 import android.graphics.Paint
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.speech.tts.TextToSpeech
+import android.text.Html
+import android.text.method.LinkMovementMethod
 import android.util.Log
 import android.util.TypedValue
 import android.view.View
@@ -76,6 +80,8 @@ class AnimalsOnTop : AppCompatActivity() {
                 if (ttsReady) tts.speak(word, TextToSpeech.QUEUE_FLUSH, null, null)
             }
         }
+        // No menu in this build, so credits get a low-key, discoverable-enough entry point.
+        imageWidget.setOnLongClickListener { showCreditsDialog(); true }
         tts = TextToSpeech(this) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 val result = tts.setLanguage(currentLanguage.locale)
@@ -208,6 +214,33 @@ class AnimalsOnTop : AppCompatActivity() {
     private fun setButtonsVisible(visible: Boolean) {
         val v = if (visible) View.VISIBLE else View.INVISIBLE
         for (btn in letterWidgets) btn.visibility = v
+    }
+
+    /* A long press on the animal shows author and image-source attribution;
+     * see app/src/main/res/drawable/src/LICENSE for the full per-image list. */
+    private fun showCreditsDialog() {
+        val packageInfo = packageManager.getPackageInfo(packageName, 0)
+        val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            packageInfo.longVersionCode.toInt()
+        } else {
+            @Suppress("DEPRECATION") packageInfo.versionCode
+        }
+        val html = """
+            <big><b>LetterBox</b></big><br>
+            Version ${packageInfo.versionName} ($versionCode)<br><br>
+            By Tobias Mueller (<a href="https://gitlab.com/muelli">@muelli on GitLab</a>)<br><br>
+            <b>Animal images from:</b><br>
+            Pixabay &#183; Openclipart (CC0) &#183; Vecteezy &#183; Wikimedia Commons (CC BY-SA 4.0) &#183; OpenAI ChatGPT
+        """.trimIndent()
+        val textView = TextView(this)
+        val padding = (16 * resources.displayMetrics.density).toInt()
+        textView.setPadding(padding, padding, padding, padding)
+        textView.text = Html.fromHtml(html, Html.FROM_HTML_MODE_COMPACT)
+        textView.movementMethod = LinkMovementMethod.getInstance()
+        AlertDialog.Builder(this)
+            .setView(textView)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
     }
 
     /* Full-screen immersive mode: no status bar or navigation bar, so a
