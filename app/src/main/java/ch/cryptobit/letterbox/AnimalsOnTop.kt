@@ -15,6 +15,9 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 
 class AnimalsOnTop : AppCompatActivity() {
 
@@ -49,6 +52,7 @@ class AnimalsOnTop : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.animals_on_top)
+        hideSystemBars()
 
         currentLanguage = AppLanguage.fromSystemLocale()
         currentAlphabet = LanguageMaps.getAlphabet(currentLanguage)
@@ -204,6 +208,24 @@ class AnimalsOnTop : AppCompatActivity() {
     private fun setButtonsVisible(visible: Boolean) {
         val v = if (visible) View.VISIBLE else View.INVISIBLE
         for (btn in letterWidgets) btn.visibility = v
+    }
+
+    /* Full-screen immersive mode: no status bar or navigation bar, so a
+     * tapping toddler doesn't accidentally leave the app. Swiping from an
+     * edge still reveals the bars temporarily, as intended by the OS. */
+    private fun hideSystemBars() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowInsetsControllerCompat(window, window.decorView).let { controller ->
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+            controller.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        // The bars can be swiped back in; re-hide them once the window regains focus.
+        if (hasFocus) hideSystemBars()
     }
 
     override fun onDestroy() {
