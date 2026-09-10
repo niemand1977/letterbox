@@ -5,4 +5,8 @@
     <color name="colorAccent">#03DAC5</color>
 
     <color name="black_overlay">#66000000</color>
+
+    <color name="letterButtonBackground">#FFF8E1</color>
+    <color name="letterButtonBorder">#FF8F00</color>
+    <color name="letterButtonRipple">#FFE082</color>
 </resources>
