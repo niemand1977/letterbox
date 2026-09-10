@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.util.TypedValue
 import android.view.View
@@ -31,10 +32,27 @@ class AnimalsOnTop : AppCompatActivity() {
     // Tracks the animal/letter shown last round so loadRound() can rule it out,
     // preventing the same animal from appearing twice in a row.
     private var previousLetter: Char? = null
+    // Tracks which physical button held the correct answer last round, so the
+    // same button doesn't get it twice in a row (a child could learn the
+    // position instead of the letter).
+    private var previousButtonIndex: Int? = null
+
+    // Detected once at launch: this app has no language switcher, so the
+    // system locale decides which words/letters are used for the whole session.
+    private lateinit var currentLanguage: AppLanguage
+    private lateinit var currentAlphabet: List<Char>
+    private var currentWord: String? = null
+
+    private lateinit var tts: TextToSpeech
+    private var ttsReady = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.animals_on_top)
+
+        currentLanguage = AppLanguage.fromSystemLocale()
+        currentAlphabet = LanguageMaps.getAlphabet(currentLanguage)
+        Log.i(TAG, "Detected language ${currentLanguage.code}")
 
         imageWidget = findViewById(R.id.imageView)
         letterWidgets = listOf(
@@ -46,6 +64,23 @@ class AnimalsOnTop : AppCompatActivity() {
 
         lettersContainer.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             updateLetterTextSize()
+        }
+
+        // Speak the animal's name (in the detected language) whenever its picture is tapped.
+        imageWidget.setOnClickListener {
+            currentWord?.let { word ->
+                if (ttsReady) tts.speak(word, TextToSpeech.QUEUE_FLUSH, null, null)
+            }
+        }
+        tts = TextToSpeech(this) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                val result = tts.setLanguage(currentLanguage.locale)
+                ttsReady = result != TextToSpeech.LANG_MISSING_DATA &&
+                    result != TextToSpeech.LANG_NOT_SUPPORTED
+                if (!ttsReady) Log.w(TAG, "No TTS voice for ${currentLanguage.code}")
+            } else {
+                Log.w(TAG, "TextToSpeech init failed with status $status")
+            }
         }
 
         // Hide buttons until sounds are ready
@@ -68,7 +103,7 @@ class AnimalsOnTop : AppCompatActivity() {
     /**
      * Dynamically compute the optimal font size so all 3 letter buttons have a
      * uniform, beautifully proportioned text size that is guaranteed to fit any
-     * letter in 'A'..'Z' without horizontal or vertical clipping.
+     * letter of the current language's alphabet without horizontal or vertical clipping.
      */
     private fun updateLetterTextSize() {
         val button = letterWidgets.firstOrNull() ?: return
@@ -82,9 +117,11 @@ class AnimalsOnTop : AppCompatActivity() {
             textSize = 100f
         }
 
-        // Measure widest letter (typically 'W' or 'M') and font height at 100px
+        // Measure the current alphabet's widest letter and font height at 100px
+        // (not just 'A'..'Z': other languages' scripts, e.g. Hangul or Hiragana,
+        // have different glyph metrics).
         var maxCharWidth = 0f
-        for (c in 'A'..'Z') {
+        for (c in currentAlphabet) {
             val w = testPaint.measureText(c.toString())
             if (w > maxCharWidth) maxCharWidth = w
         }
@@ -103,9 +140,17 @@ class AnimalsOnTop : AppCompatActivity() {
 
     private fun loadRound() {
         updateLetterTextSize()
-        val shuffledButtons = letterWidgets.shuffled()
+        val shuffledButtons = letterWidgets.shuffled().toMutableList()
+        // Guarantee the correct answer doesn't land on the same physical
+        // button as last round, regardless of how the shuffle came out.
+        if (letterWidgets.indexOf(shuffledButtons[0]) == previousButtonIndex) {
+            val tmp = shuffledButtons[0]
+            shuffledButtons[0] = shuffledButtons[1]
+            shuffledButtons[1] = tmp
+        }
+        previousButtonIndex = letterWidgets.indexOf(shuffledButtons[0])
 
-        val letters = ('A'..'Z').toMutableSet()
+        val letters = currentAlphabet.toMutableSet()
         // Remove the previous round's letter before picking, so the next
         // animal is guaranteed to differ from the one just shown.
         previousLetter?.let { letters.remove(it) }
@@ -114,8 +159,10 @@ class AnimalsOnTop : AppCompatActivity() {
         previousLetter = chosenLetter
         Log.d(TAG, "Chosen letter $chosenLetter")
 
+        val chosenDrawable = LanguageMaps.getMap(currentLanguage)[chosenLetter]!!.random()
+        currentWord = LanguageMaps.getWord(chosenDrawable, currentLanguage)
         imageWidget.setImageDrawable(
-            ResourcesCompat.getDrawable(resources, letter_resource_map[chosenLetter] ?: 0, null)
+            ResourcesCompat.getDrawable(resources, chosenDrawable, null)
         )
 
         shuffledButtons[0].text = "$chosenLetter"
@@ -163,5 +210,7 @@ class AnimalsOnTop : AppCompatActivity() {
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)
         soundPool.release()
+        tts.stop()
+        tts.shutdown()
     }
 }

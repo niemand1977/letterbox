@@ -21,37 +21,6 @@ fun soundPool(): SoundPool {
 }
 
 
-/** The resources need to be reasonably free.
- * pixabay seems to be a good enough resource */
-val letter_resource_map = mapOf(
-    'A' to R.drawable.apple,
-    'B' to R.drawable.bear,
-    'C' to R.drawable.chameleon,
-    'D' to R.drawable.ducky,
-    'E' to R.drawable.elephant,
-    'F' to R.drawable.fox,
-    'G' to R.drawable.giraffe,
-    'H' to R.drawable.bunny,
-    'I' to R.drawable.igel,
-    'J' to R.drawable.jaguar,
-    'K' to R.drawable.kangaroo,
-    'L' to R.drawable.lion,
-    'M' to R.drawable.mouse,
-    'N' to R.drawable.nest,
-    'O' to R.drawable.octopus,
-    'P' to R.drawable.penguin,
-    'Q' to R.drawable.jellyfish,
-    'R' to R.drawable.rainbow,
-    'S' to R.drawable.snake,
-    'T' to R.drawable.table,
-    'U' to R.drawable.unicorn,
-    'V' to R.drawable.vulture,
-    'W' to R.drawable.whale,
-    'X' to R.drawable.xylophone,
-    'Y' to R.drawable.yak,
-    'Z' to R.drawable.zebra
-)
-
 fun pop (set: MutableCollection<Char>) : Char {
     val e = set.random()
     set.remove(e)
