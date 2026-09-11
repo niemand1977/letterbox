@@ -249,7 +249,9 @@ class AnimalsOnTop : AppCompatActivity() {
         val html = """
             <big><b>LetterBox</b></big><br>
             Version ${packageInfo.versionName} ($versionCode)<br><br>
-            By Tobias Mueller (<a href="https://gitlab.com/muelli">@muelli on GitLab</a>)<br><br>
+            By Tobias Mueller (<a href="https://gitlab.com/muelli">@muelli on GitLab</a>)<br>
+            Ruben Barkow-Kuder<br>
+            <a href="https://eclabs.de/#kontakt">eclabs.de/#kontakt</a><br><br>
             <b>Animal images from:</b><br>
             Pixabay &#183; Openclipart (CC0) &#183; Vecteezy &#183; Wikimedia Commons (CC BY-SA 4.0) &#183; OpenAI ChatGPT
         """.trimIndent()
