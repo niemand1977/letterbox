@@ -148,6 +148,9 @@ class AnimalsOnTop : AppCompatActivity() {
         }
     }
 
+    // When non-null, the next round repeats this letter (wrong answer retry).
+    private var repeatedLetter: Char? = null
+
     private fun loadRound() {
         updateLetterTextSize()
         val shuffledButtons = letterWidgets.shuffled().toMutableList()
@@ -162,10 +165,15 @@ class AnimalsOnTop : AppCompatActivity() {
 
         val letters = currentAlphabet.toMutableSet()
         // Remove the previous round's letter before picking, so the next
-        // animal is guaranteed to differ from the one just shown.
-        previousLetter?.let { letters.remove(it) }
-        val chosenLetter = letters.pop()
-        // Remember this round's letter for the next exclusion check.
+        // animal is guaranteed to differ from the one just shown — but only
+        // when this is a fresh round, not a retry after a wrong answer.
+        val chosenLetter = if (repeatedLetter != null && repeatedLetter in letters) {
+            repeatedLetter!!
+        } else {
+            previousLetter?.let { letters.remove(it) }
+            letters.pop()
+        }
+        repeatedLetter = null
         previousLetter = chosenLetter
         Log.d(TAG, "Chosen letter $chosenLetter")
 
@@ -175,21 +183,27 @@ class AnimalsOnTop : AppCompatActivity() {
             ResourcesCompat.getDrawable(resources, chosenDrawable, null)
         )
 
+        // Pick two wrong letters from the remaining alphabet
+        letters.remove(chosenLetter)
+        val wrong1 = letters.pop()
+        val wrong2 = letters.pop()
+
         shuffledButtons[0].text = "$chosenLetter"
-        shuffledButtons[1].text = "${letters.pop()}"
-        shuffledButtons[2].text = "${letters.pop()}"
+        shuffledButtons[1].text = "$wrong1"
+        shuffledButtons[2].text = "$wrong2"
 
         for (btn in shuffledButtons) btn.isClickable = true
 
-        shuffledButtons[0].setOnClickListener { onAnswer(shuffledButtons, it as TextView, correct = true) }
-        shuffledButtons[1].setOnClickListener { onAnswer(shuffledButtons, it as TextView, correct = false) }
-        shuffledButtons[2].setOnClickListener { onAnswer(shuffledButtons, it as TextView, correct = false) }
+        shuffledButtons[0].setOnClickListener { onAnswer(shuffledButtons, it as TextView, correct = true, chosenLetter) }
+        shuffledButtons[1].setOnClickListener { onAnswer(shuffledButtons, it as TextView, correct = false, chosenLetter) }
+        shuffledButtons[2].setOnClickListener { onAnswer(shuffledButtons, it as TextView, correct = false, chosenLetter) }
 
         // Reset letter colours from previous round
         for (btn in shuffledButtons) btn.setTextColor(getColor(android.R.color.black))
     }
 
-    private fun onAnswer(allButtons: List<TextView>, tapped: TextView, correct: Boolean) {
+    private fun onAnswer(allButtons: List<TextView>, tapped: TextView, correct: Boolean,
+                         chosenLetter: Char) {
         // Disable all buttons immediately so the child can't double-tap
         for (btn in allButtons) btn.isClickable = false
 
@@ -199,7 +213,14 @@ class AnimalsOnTop : AppCompatActivity() {
         val flashColor = if (correct) Color.parseColor("#4CAF50") else Color.parseColor("#F44336")
         flashTextColor(tapped, flashColor)
 
-        handler.postDelayed({ loadRound() }, 800)
+        if (correct) {
+            // Correct answer: move on to a new letter after a short pause
+            handler.postDelayed({ loadRound() }, 800)
+        } else {
+            // Wrong answer: repeat the same letter so the child gets another chance
+            repeatedLetter = chosenLetter
+            handler.postDelayed({ loadRound() }, 400)
+        }
     }
 
     private fun flashTextColor(view: TextView, toColor: Int) {
