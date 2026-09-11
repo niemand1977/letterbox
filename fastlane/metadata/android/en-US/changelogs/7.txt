@@ -1,0 +1,4 @@
+- Added multi-language animal content (English, German, French, Spanish, and more).
+- Each letter now has multiple animal pictures to keep rounds fresh and varied.
+- Animals are now spoken aloud when shown, helping children connect sounds to letters.
+- Duplicate animals no longer appear in back-to-back rounds.
