@@ -204,8 +204,15 @@ class AnimalsOnTop : AppCompatActivity() {
 
     private fun onAnswer(allButtons: List<TextView>, tapped: TextView, correct: Boolean,
                          chosenLetter: Char) {
-        // Disable all buttons immediately so the child can't double-tap
-        for (btn in allButtons) btn.isClickable = false
+        // Disable all buttons immediately so the child can't double-tap. Also
+        // clear any lingering pressed/ripple state: if a second finger answers
+        // while a different button is still held down, that other button
+        // never gets an ACTION_UP/CANCEL of its own and would otherwise stay
+        // visually "stuck" pressed into the next round.
+        for (btn in allButtons) {
+            btn.isClickable = false
+            btn.isPressed = false
+        }
 
         soundPool.play(if (correct) soundYes else soundNo, oneF, oneF, 0, 0, oneF)
 

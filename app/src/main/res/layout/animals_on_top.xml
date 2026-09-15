@@ -29,7 +29,8 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             android:gravity="center"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:splitMotionEvents="false">
 
             <TextView
                 android:id="@+id/mainLetter1"
