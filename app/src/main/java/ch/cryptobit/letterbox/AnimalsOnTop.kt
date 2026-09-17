@@ -14,6 +14,7 @@ import android.text.Html
 import android.text.method.LinkMovementMethod
 import android.util.Log
 import android.util.TypedValue
+import android.view.KeyEvent
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -283,6 +284,23 @@ class AnimalsOnTop : AppCompatActivity() {
             controller.systemBarsBehavior =
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
+    }
+
+    // Desktop keyboard support: 1/2/3 pick by screen position; a letter
+    // key picks whichever button currently shows that letter.
+    private val keyToIndex = mapOf(
+        KeyEvent.KEYCODE_1 to 0, KeyEvent.KEYCODE_NUMPAD_1 to 0,
+        KeyEvent.KEYCODE_2 to 1, KeyEvent.KEYCODE_NUMPAD_2 to 1,
+        KeyEvent.KEYCODE_3 to 2, KeyEvent.KEYCODE_NUMPAD_3 to 2
+    )
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+        val index = keyToIndex[keyCode] ?: letterWidgets.indexOfFirst {
+            it.text.firstOrNull()?.equals(event.unicodeChar.toChar(), ignoreCase = true) == true
+        }
+        val btn = letterWidgets.getOrNull(index) ?: return super.onKeyUp(keyCode, event)
+        if (btn.isClickable) btn.performClick()
+        return true
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
