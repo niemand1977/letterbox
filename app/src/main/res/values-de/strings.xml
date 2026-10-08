@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_hamburger_a11y">Menü</string>
+    <string name="menu_about">Über</string>
+    <string name="menu_hide">Menü ausblenden</string>
+    <string name="hide_menu_confirm_title">Menü ausblenden?</string>
+    <string name="hide_menu_confirm_message">Der Menü-Button wird unsichtbar. Zum erneuten Öffnen die obere rechte Bildschirmecke gedrückt halten.</string>
+</resources>

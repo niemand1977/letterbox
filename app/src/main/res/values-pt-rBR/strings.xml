@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_hamburger_a11y">Menu</string>
+    <string name="menu_about">Sobre</string>
+    <string name="menu_hide">Ocultar menu</string>
+    <string name="hide_menu_confirm_title">Ocultar o menu?</string>
+    <string name="hide_menu_confirm_message">O botão de menu ficará invisível. Para abri-lo novamente, pressione e segure o canto superior direito da tela.</string>
+</resources>

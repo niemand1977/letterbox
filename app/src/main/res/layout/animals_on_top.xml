@@ -6,6 +6,19 @@
     android:layout_height="match_parent"
     tools:context=".AnimalsOnTop">
 
+    <!-- Floating hamburger button, top-right corner, overlapping the image -->
+    <ImageButton
+        android:id="@+id/menu_hamburger"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_margin="8dp"
+        android:background="@android:color/transparent"
+        android:contentDescription="@string/menu_hamburger_a11y"
+        android:elevation="8dp"
+        android:src="@drawable/ic_hamburger_menu"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
