@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">LetterBox</string>
+    <string name="menu_hamburger_a11y">Menu</string>
+    <string name="menu_about">About</string>
+    <string name="menu_hide">Hide menu</string>
+    <string name="hide_menu_confirm_title">Hide menu?</string>
+    <string name="hide_menu_confirm_message">The menu button will become invisible. To open the menu again, press and hold the top-right corner of the screen.</string>
 </resources>

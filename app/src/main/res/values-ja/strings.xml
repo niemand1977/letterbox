@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_hamburger_a11y">メニュー</string>
+    <string name="menu_about">このアプリについて</string>
+    <string name="menu_hide">メニューを隠す</string>
+    <string name="hide_menu_confirm_title">メニューを隠しますか？</string>
+    <string name="hide_menu_confirm_message">メニューボタンが非表示になります。もう一度開くには、画面の右上隅を長押ししてください。</string>
+</resources>

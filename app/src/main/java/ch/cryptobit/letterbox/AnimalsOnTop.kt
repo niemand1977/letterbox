@@ -14,15 +14,24 @@ import android.text.Html
 import android.text.method.LinkMovementMethod
 import android.util.Log
 import android.util.TypedValue
+import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
+import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.os.LocaleListCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import java.lang.reflect.Method
+
+const val PREFS_NAME = "letterbox_prefs"
+const val PREF_HIDE_MENU = "hide_menu"
 
 class AnimalsOnTop : AppCompatActivity() {
 
@@ -45,11 +54,15 @@ class AnimalsOnTop : AppCompatActivity() {
     // position instead of the letter).
     private var previousButtonIndex: Int? = null
 
-    // Detected once at launch: this app has no language switcher, so the
-    // system locale decides which words/letters are used for the whole session.
+    // Resolved once at launch from the per-app locale (or the system locale
+    // when none was picked): it decides which words/letters are used for the
+    // whole session.
     private lateinit var currentLanguage: AppLanguage
     private lateinit var currentAlphabet: List<Char>
     private var currentWord: String? = null
+
+    private lateinit var menuButton: ImageButton
+    private var menuHidden = false
 
     private lateinit var tts: TextToSpeech
     private var ttsReady = false
@@ -59,7 +72,7 @@ class AnimalsOnTop : AppCompatActivity() {
         setContentView(R.layout.animals_on_top)
         hideSystemBars()
 
-        currentLanguage = AppLanguage.fromSystemLocale()
+        currentLanguage = loadLanguage()
         currentAlphabet = LanguageMaps.getAlphabet(currentLanguage)
         Log.i(TAG, "Detected language ${currentLanguage.code}")
 
@@ -71,6 +84,22 @@ class AnimalsOnTop : AppCompatActivity() {
         )
         lettersContainer = findViewById(R.id.lettersContainer)
 
+        menuButton = findViewById(R.id.menu_hamburger)
+        menuButton.setOnClickListener {
+            if (!menuHidden) showHamburgerMenu(it)
+        }
+        /* With the menu hidden, a long press on the invisible button
+         * is the way to open the menu again. */
+        menuButton.setOnLongClickListener {
+            showHamburgerMenu(it)
+            true
+        }
+        menuHidden = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .getBoolean(PREF_HIDE_MENU, false)
+        /* INVISIBLE views receive no touch events, so transparency is
+         * done via alpha to keep the long-press escape hatch alive. */
+        menuButton.alpha = if (menuHidden) 0f else 1f
+
         lettersContainer.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             updateLetterTextSize()
         }
@@ -81,8 +110,6 @@ class AnimalsOnTop : AppCompatActivity() {
                 if (ttsReady) tts.speak(word, TextToSpeech.QUEUE_FLUSH, null, null)
             }
         }
-        // No menu in this build, so credits get a low-key, discoverable-enough entry point.
-        imageWidget.setOnLongClickListener { showCreditsDialog(); true }
         tts = TextToSpeech(this) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 val result = tts.setLanguage(currentLanguage.locale)
@@ -307,6 +334,106 @@ class AnimalsOnTop : AppCompatActivity() {
         super.onWindowFocusChanged(hasFocus)
         // The bars can be swiped back in; re-hide them once the window regains focus.
         if (hasFocus) hideSystemBars()
+    }
+
+    /* --- Language persistence --- */
+
+    /* The chosen language is stored via Android's per-app language mechanism
+     * (AppCompatDelegate), so it is already applied before resources load. */
+    private fun loadLanguage(): AppLanguage {
+        val locale = AppCompatDelegate.getApplicationLocales()[0]
+        return if (locale != null) AppLanguage.fromLocale(locale) else AppLanguage.fromSystemLocale()
+    }
+
+    /* --- Hamburger popup menu --- */
+
+    private fun showHamburgerMenu(anchor: View) {
+        val popup = PopupMenu(this, anchor, Gravity.END)
+        val menu = popup.menu
+        /* Show the current language with its flag as the first menu item. */
+        val langItem = menu.add(0, R.id.menu_language, 0, currentLanguage.displayName)
+        langItem.setIcon(currentLanguage.flagResId)
+        val aboutItem = menu.add(0, R.id.menu_about, 1, R.string.menu_about)
+        aboutItem.setIcon(android.R.drawable.ic_menu_info_details)
+        val hideItem = menu.add(0, R.id.menu_hide, 2, R.string.menu_hide)
+        hideItem.isCheckable = true
+        hideItem.isChecked = menuHidden
+        forceShowPopupIcons(popup)
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.menu_language -> {
+                    showLanguageMenu(anchor)
+                    true
+                }
+                R.id.menu_about -> {
+                    showCreditsDialog()
+                    true
+                }
+                R.id.menu_hide -> {
+                    if (menuHidden) {
+                        setMenuHidden(false)
+                    } else {
+                        /* Explain the long-press escape hatch before the
+                         * button disappears. */
+                        AlertDialog.Builder(this)
+                            .setTitle(R.string.hide_menu_confirm_title)
+                            .setMessage(R.string.hide_menu_confirm_message)
+                            .setPositiveButton(android.R.string.ok) { _, _ -> setMenuHidden(true) }
+                            .setNegativeButton(android.R.string.cancel, null)
+                            .show()
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
+    private fun setMenuHidden(hidden: Boolean) {
+        menuHidden = hidden
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .edit().putBoolean(PREF_HIDE_MENU, hidden).apply()
+        menuButton.alpha = if (hidden) 0f else 1f
+        Log.i(TAG, "Menu button ${if (hidden) "hidden" else "visible"}")
+    }
+
+    /* Force-show icons in a popup menu (PopupMenu hides them by default). */
+    private fun forceShowPopupIcons(popup: PopupMenu) {
+        try {
+            val field = popup.javaClass.getDeclaredField("mPopup")
+            field.isAccessible = true
+            val menuPopupHelper = field.get(popup)
+            val method: Method = menuPopupHelper.javaClass.getMethod("setForceShowIcon", Boolean::class.javaPrimitiveType)
+            method.invoke(menuPopupHelper, true)
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not force show icons in PopupMenu: " + e.message)
+        }
+    }
+
+    /* --- Language selection popup --- */
+
+    private fun showLanguageMenu(anchor: View) {
+        val popup = PopupMenu(this, anchor, Gravity.END)
+        val menu = popup.menu
+        AppLanguage.entries.forEachIndexed { index, lang ->
+            val menuItem = menu.add(0, index, index, lang.displayName)
+            menuItem.setIcon(lang.flagResId)
+            if (lang == currentLanguage) {
+                menuItem.isCheckable = true
+                menuItem.isChecked = true
+            }
+        }
+        forceShowPopupIcons(popup)
+        popup.setOnMenuItemClickListener { item ->
+            val lang = AppLanguage.entries[item.itemId]
+            Log.i(TAG, "Language changed to " + lang.displayName)
+            /* Persists the choice and recreates the activity with the new
+             * locale; also exposes it in system per-app language settings. */
+            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(lang.code))
+            true
+        }
+        popup.show()
     }
 
     override fun onDestroy() {

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="menu_hamburger_a11y">Menu</string>
+    <string name="menu_about">O aplikacji</string>
+    <string name="menu_hide">Ukryj menu</string>
+    <string name="hide_menu_confirm_title">Ukryć menu?</string>
+    <string name="hide_menu_confirm_message">Przycisk menu stanie się niewidoczny. Aby otworzyć go ponownie, przytrzymaj prawy górny róg ekranu.</string>
+</resources>

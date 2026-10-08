@@ -3,29 +3,37 @@ package ch.cryptobit.letterbox
 import java.util.Locale
 
 /* One entry per supported app language. `code` is the BCP-47 language tag
- * used both to detect the system locale and to select a TextToSpeech voice. */
-enum class AppLanguage(val code: String) {
-    ENGLISH("en"),
-    GERMAN("de"),
-    FRENCH("fr"),
-    SPANISH("es"),
-    ITALIAN("it"),
-    KOREAN("ko"),
-    JAPANESE("ja"),
-    POLISH("pl"),
-    PORTUGUESE_BR("pt-BR");
+ * used both to detect the system locale and to select a TextToSpeech voice.
+ * `displayName` is the native name shown in the language menu, `flagResId`
+ * is the flag icon shown next to it. */
+enum class AppLanguage(val code: String, val displayName: String, val flagResId: Int) {
+    ENGLISH("en", "English", R.drawable.ic_flag_us),
+    GERMAN("de", "Deutsch", R.drawable.ic_flag_de),
+    FRENCH("fr", "Français", R.drawable.ic_flag_fr),
+    SPANISH("es", "Español", R.drawable.ic_flag_es),
+    ITALIAN("it", "Italiano", R.drawable.ic_flag_it),
+    KOREAN("ko", "한국어", R.drawable.ic_flag_kr),
+    JAPANESE("ja", "日本語", R.drawable.ic_flag_jp),
+    POLISH("pl", "Polski", R.drawable.ic_flag_pl),
+    PORTUGUESE_BR("pt-BR", "Português (Brasil)", R.drawable.ic_flag_br);
 
     val locale: Locale get() = Locale.forLanguageTag(code)
 
     companion object {
+        fun fromCode(code: String): AppLanguage {
+            return fromLocale(Locale.forLanguageTag(code))
+        }
+
+        /* Falls back to English if the given locale isn't one we support. */
+        fun fromLocale(locale: Locale): AppLanguage {
+            entries.find { it.code == "${locale.language}-${locale.country}" }?.let { return it }
+            entries.find { it.code == locale.language }?.let { return it }
+            return ENGLISH
+        }
+
         /* Falls back to English if the device's language isn't one we support. */
         fun fromSystemLocale(): AppLanguage {
-            val locale = Locale.getDefault()
-            val language = locale.language
-            val region = locale.country
-            entries.find { it.code == "$language-$region" }?.let { return it }
-            entries.find { it.code == language }?.let { return it }
-            return ENGLISH
+            return fromLocale(Locale.getDefault())
         }
     }
 }
