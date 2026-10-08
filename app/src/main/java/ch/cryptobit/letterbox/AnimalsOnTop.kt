@@ -31,9 +31,14 @@ import androidx.core.view.WindowInsetsControllerCompat
 import java.lang.reflect.Method
 
 const val PREFS_NAME = "letterbox_prefs"
-const val PREF_HIDE_MENU = "hide_menu"
 
 class AnimalsOnTop : AppCompatActivity() {
+
+    companion object {
+        /* Session-only flag, deliberately not persisted: the menu button
+         * becomes visible again once the app process is restarted. */
+        private var menuHidden = false
+    }
 
     private val TAG = "LetterBox"
     private val handler = Handler(Looper.getMainLooper())
@@ -62,7 +67,6 @@ class AnimalsOnTop : AppCompatActivity() {
     private var currentWord: String? = null
 
     private lateinit var menuButton: ImageButton
-    private var menuHidden = false
 
     private lateinit var tts: TextToSpeech
     private var ttsReady = false
@@ -86,7 +90,9 @@ class AnimalsOnTop : AppCompatActivity() {
 
         menuButton = findViewById(R.id.menu_hamburger)
         menuButton.setOnClickListener {
-            if (!menuHidden) showHamburgerMenu(it)
+            /* While hidden, a short tap passes through to the animal image
+             * below, so the corner stays touchable like the rest of it. */
+            if (!menuHidden) showHamburgerMenu(it) else imageWidget.performClick()
         }
         /* With the menu hidden, a long press on the invisible button
          * is the way to open the menu again. */
@@ -94,8 +100,6 @@ class AnimalsOnTop : AppCompatActivity() {
             showHamburgerMenu(it)
             true
         }
-        menuHidden = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-            .getBoolean(PREF_HIDE_MENU, false)
         /* INVISIBLE views receive no touch events, so transparency is
          * done via alpha to keep the long-press escape hatch alive. */
         menuButton.alpha = if (menuHidden) 0f else 1f
@@ -392,8 +396,6 @@ class AnimalsOnTop : AppCompatActivity() {
 
     private fun setMenuHidden(hidden: Boolean) {
         menuHidden = hidden
-        getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-            .edit().putBoolean(PREF_HIDE_MENU, hidden).apply()
         menuButton.alpha = if (hidden) 0f else 1f
         Log.i(TAG, "Menu button ${if (hidden) "hidden" else "visible"}")
     }
