@@ -1,0 +1,5 @@
+- New menu in the top-right corner with language selection, flags, and the About dialog.
+- The chosen language is remembered and also shows up in the system's per-app language settings.
+- The menu button can be hidden for the current session; a long press brings it back.
+- Keyboard support for Android desktop and ChromeOS: number keys 1, 2, and 3 or the matching letter key pick an answer.
+- Fixed buttons staying pressed after a multi-touch tap.
