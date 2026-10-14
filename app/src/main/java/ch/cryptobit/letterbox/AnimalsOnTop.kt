@@ -344,7 +344,10 @@ class AnimalsOnTop : AppCompatActivity() {
             recordAnswer(currentLanguage, chosenLetter, correct)
         }
 
-        soundPool.play(if (correct) soundYes else soundNo, oneF, oneF, 0, 0, oneF)
+        /* The feedback jingle plays well below full volume so it stays a
+         * subtle cue instead of dominating the spoken animal name. */
+        val feedbackVolume = oneF / 6f
+        soundPool.play(if (correct) soundYes else soundNo, feedbackVolume, feedbackVolume, 0, 0, oneF)
 
         /* Speak the animal's name shortly after the feedback sound, but only
          * after a correct answer, so the child is not confused by hearing the
