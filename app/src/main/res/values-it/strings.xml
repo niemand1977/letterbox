@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="menu_hamburger_a11y">Menu</string>
+    <string name="menu_letters">Lettere</string>
     <string name="menu_about">Informazioni</string>
     <string name="menu_hide">Nascondi menu</string>
     <string name="hide_menu_confirm_title">Nascondere il menu?</string>
     <string name="hide_menu_confirm_message">Il pulsante del menu diventerà invisibile. Per riaprirlo, tieni premuto l\'angolo in alto a destra dello schermo.</string>
+    <string name="letters_all">Tutte</string>
+    <string name="letters_top10">Top 10</string>
+    <string name="letters_only_a">Solo A</string>
+    <string name="dialog_back_a11y">Indietro</string>
+    <string name="dialog_close_a11y">Chiudi</string>
 </resources>

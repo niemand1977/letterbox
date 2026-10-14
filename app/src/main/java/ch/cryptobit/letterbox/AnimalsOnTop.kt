@@ -19,8 +19,10 @@ import android.view.KeyEvent
 import android.view.View
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.TextView
+import android.widget.ToggleButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.res.ResourcesCompat
@@ -31,6 +33,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import java.lang.reflect.Method
 
 const val PREFS_NAME = "letterbox_prefs"
+const val PREF_ENABLED_LETTERS_PREFIX = "enabled_letters_"
 
 class AnimalsOnTop : AppCompatActivity() {
 
@@ -66,6 +69,14 @@ class AnimalsOnTop : AppCompatActivity() {
     private lateinit var currentAlphabet: List<Char>
     private var currentWord: String? = null
 
+    /* Only letters the user enabled in the letter-selection dialog and that
+     * actually have animals take part in the game. */
+    private lateinit var letterMap: Map<Char, List<Int>>
+
+    /* Upcoming letters of the current queue cycle; kept in memory only, so
+     * a fresh app start always deals a freshly shuffled queue. */
+    private val letterQueue = mutableListOf<Char>()
+
     private lateinit var menuButton: ImageButton
 
     private lateinit var tts: TextToSpeech
@@ -78,6 +89,15 @@ class AnimalsOnTop : AppCompatActivity() {
 
         currentLanguage = loadLanguage()
         currentAlphabet = LanguageMaps.getAlphabet(currentLanguage)
+        letterMap = LanguageMaps.getMap(currentLanguage)
+            .filterKeys { it in getEnabledLetters(currentLanguage) }
+        /* A selection that matches no animal (e.g. animals were dropped
+         * in an update) would leave the round loader without letters;
+         * fall back to the full map instead. */
+        if (letterMap.isEmpty()) {
+            Log.w(TAG, "Enabled letters left no animals; using the full map")
+            letterMap = LanguageMaps.getMap(currentLanguage)
+        }
         Log.i(TAG, "Detected language ${currentLanguage.code}")
 
         imageWidget = findViewById(R.id.imageView)
@@ -183,6 +203,34 @@ class AnimalsOnTop : AppCompatActivity() {
     // When non-null, the next round repeats this letter (wrong answer retry).
     private var repeatedLetter: Char? = null
 
+    /* Letter queue: each enabled letter appears exactly 2x before the queue
+     * is refilled, so the distribution stays even. */
+    private fun refillLetterQueue(): MutableList<Char> {
+        val queue = letterMap.keys.toMutableList()
+        queue.addAll(letterMap.keys)
+        queue.shuffle()
+        return queue
+    }
+
+    private fun popNextLetter(): Char {
+        if (letterQueue.isEmpty()) letterQueue.addAll(refillLetterQueue())
+        var letter = letterQueue.removeAt(0)
+        /* A refill can put the just-shown letter right back at the front;
+         * rotate it behind the remaining entries so rounds do not repeat
+         * immediately. */
+        if (letter == previousLetter && letterQueue.isNotEmpty()) {
+            letterQueue.add(letter)
+            letter = letterQueue.removeAt(0)
+        }
+        return letter
+    }
+
+    /* Drops the pending queue so the next round refills it, e.g. after the
+     * enabled letters changed. */
+    private fun clearLetterQueue() {
+        letterQueue.clear()
+    }
+
     private fun loadRound() {
         updateLetterTextSize()
         val shuffledButtons = letterWidgets.shuffled().toMutableList()
@@ -195,30 +243,38 @@ class AnimalsOnTop : AppCompatActivity() {
         }
         previousButtonIndex = letterWidgets.indexOf(shuffledButtons[0])
 
-        val letters = currentAlphabet.toMutableSet()
-        // Remove the previous round's letter before picking, so the next
-        // animal is guaranteed to differ from the one just shown — but only
-        // when this is a fresh round, not a retry after a wrong answer.
-        val chosenLetter = if (repeatedLetter != null && repeatedLetter in letters) {
-            repeatedLetter!!
-        } else {
-            previousLetter?.let { letters.remove(it) }
-            letters.pop()
-        }
+        /* On a retry after a wrong answer the same letter is asked again; a
+         * fresh round pops the next letter off the queue. */
+        val isRetry = repeatedLetter != null && repeatedLetter in letterMap.keys
+        val chosenLetter = if (isRetry) repeatedLetter!! else popNextLetter()
         repeatedLetter = null
         previousLetter = chosenLetter
         Log.d(TAG, "Chosen letter $chosenLetter")
 
-        val chosenDrawable = LanguageMaps.getMap(currentLanguage)[chosenLetter]!!.random()
+        val chosenDrawable = letterMap[chosenLetter]!!.random()
         currentWord = LanguageMaps.getWord(chosenDrawable, currentLanguage)
         imageWidget.setImageDrawable(
             ResourcesCompat.getDrawable(resources, chosenDrawable, null)
         )
 
-        // Pick two wrong letters from the remaining alphabet
-        letters.remove(chosenLetter)
-        val wrong1 = letters.pop()
-        val wrong2 = letters.pop()
+        /* Wrong-answer letters come from the enabled letters first. Only if
+         * fewer than 3 enabled letters are available do we mix in random
+         * letters from the full alphabet so the game still works. */
+        val enabledMinusChosen = letterMap.keys
+            .filter { it != chosenLetter }.toMutableList().also { it.shuffle() }
+        val wrong1: Char
+        val wrong2: Char
+        if (enabledMinusChosen.size >= 2) {
+            wrong1 = enabledMinusChosen.removeAt(0)
+            wrong2 = enabledMinusChosen.removeAt(0)
+        } else {
+            /* Not enough enabled letters left, fill up from the full alphabet. */
+            val extraKeys = currentAlphabet
+                .filter { it != chosenLetter && it !in enabledMinusChosen }
+                .toMutableList().also { it.shuffle() }
+            wrong1 = if (enabledMinusChosen.isNotEmpty()) enabledMinusChosen.removeAt(0) else extraKeys.removeAt(0)
+            wrong2 = if (enabledMinusChosen.isNotEmpty()) enabledMinusChosen.removeAt(0) else extraKeys.removeAt(0)
+        }
 
         shuffledButtons[0].text = "$chosenLetter"
         shuffledButtons[1].text = "$wrong1"
@@ -349,6 +405,25 @@ class AnimalsOnTop : AppCompatActivity() {
         return if (locale != null) AppLanguage.fromLocale(locale) else AppLanguage.fromSystemLocale()
     }
 
+    /* --- Enabled letters --- */
+
+    /* The letter selection is persisted per language in SharedPreferences;
+     * without a stored selection the full alphabet is enabled. */
+    private fun getEnabledLetters(language: AppLanguage): Set<Char> {
+        val stored = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .getString(PREF_ENABLED_LETTERS_PREFIX + language.code, null)
+        if (stored.isNullOrEmpty()) {
+            return LanguageMaps.getAlphabet(language).toSet()
+        }
+        return stored.toCharArray().toSet()
+    }
+
+    private fun saveEnabledLetters(language: AppLanguage, letters: Set<Char>) {
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .edit().putString(PREF_ENABLED_LETTERS_PREFIX + language.code,
+                String(letters.toCharArray())).apply()
+    }
+
     /* --- Hamburger popup menu --- */
 
     private fun showHamburgerMenu(anchor: View) {
@@ -357,16 +432,32 @@ class AnimalsOnTop : AppCompatActivity() {
         /* Show the current language with its flag as the first menu item. */
         val langItem = menu.add(0, R.id.menu_language, 0, currentLanguage.displayName)
         langItem.setIcon(currentLanguage.flagResId)
-        val aboutItem = menu.add(0, R.id.menu_about, 1, R.string.menu_about)
-        aboutItem.setIcon(android.R.drawable.ic_menu_info_details)
+        /* Show how many letters are currently enabled, e.g. "Letters (5/26)";
+         * when all are enabled the plain label is enough. */
+        val enabledCount = getEnabledLetters(currentLanguage)
+            .count { it in currentAlphabet }
+        val lettersLabel = if (enabledCount == currentAlphabet.size) {
+            getString(R.string.menu_letters)
+        } else {
+            "${getString(R.string.menu_letters)} ($enabledCount/${currentAlphabet.size})"
+        }
+        val lettersItem = menu.add(0, R.id.menu_letters, 1, lettersLabel)
+        lettersItem.setIcon(R.drawable.ic_letters)
+        /* The checked state is drawn as the item's icon, aligned with the
+         * other icons; isCheckable would add a second checkmark on the right. */
         val hideItem = menu.add(0, R.id.menu_hide, 2, R.string.menu_hide)
-        hideItem.isCheckable = true
-        hideItem.isChecked = menuHidden
+        hideItem.setIcon(if (menuHidden) R.drawable.ic_check_box else R.drawable.ic_check_box_outline)
+        val aboutItem = menu.add(0, R.id.menu_about, 3, R.string.menu_about)
+        aboutItem.setIcon(android.R.drawable.ic_menu_info_details)
         forceShowPopupIcons(popup)
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.menu_language -> {
                     showLanguageMenu(anchor)
+                    true
+                }
+                R.id.menu_letters -> {
+                    showLetterSelectionMenu()
                     true
                 }
                 R.id.menu_about -> {
@@ -398,6 +489,151 @@ class AnimalsOnTop : AppCompatActivity() {
         menuHidden = hidden
         menuButton.alpha = if (hidden) 0f else 1f
         Log.i(TAG, "Menu button ${if (hidden) "hidden" else "visible"}")
+    }
+
+    /* --- Letter selection dialog --- */
+
+    private fun showLetterSelectionMenu() {
+        val allLetters = LanguageMaps.getAlphabet(currentLanguage)
+        val top10 = LanguageMaps.getTop10Letters(currentLanguage)
+        var enabled = getEnabledLetters(currentLanguage).toMutableSet()
+
+        val dialogView = layoutInflater.inflate(R.layout.letter_selection_dialog, null)
+        val grid = dialogView.findViewById<LinearLayout>(R.id.letterGrid)
+        val toggleButtons = mutableMapOf<Char, ToggleButton>()
+
+        /* Portrait uses six columns. Landscape uses at least seven columns and
+         * adds columns when necessary so the grid never exceeds four rows. */
+        val columns = if (
+            resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+        ) {
+            maxOf(7, (allLetters.size + 3) / 4)
+        } else {
+            6
+        }
+        var row: LinearLayout? = null
+        for ((index, letter) in allLetters.withIndex()) {
+            if (index % columns == 0) {
+                row = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+                }
+                grid.addView(row)
+            }
+            val container = android.widget.FrameLayout(this).apply {
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    setMargins(4, 4, 4, 4)
+                }
+            }
+            val tb = ToggleButton(this).apply {
+                textSize = 28f
+                text = letter.toString()
+                textOn = letter.toString()
+                textOff = letter.toString()
+                isChecked = letter in enabled
+                layoutParams = android.widget.FrameLayout.LayoutParams(
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.FrameLayout.LayoutParams.WRAP_CONTENT
+                )
+                updateToggleBackground(this)
+                setOnClickListener {
+                    if (isChecked) {
+                        enabled.add(letter)
+                    } else {
+                        enabled.remove(letter)
+                    }
+                    updateToggleBackground(this)
+                }
+            }
+            container.addView(tb)
+
+            toggleButtons[letter] = tb
+            row!!.addView(container)
+        }
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+
+        fun applyAndClose() {
+            if (enabled.isEmpty()) {
+                /* Prevent disabling all letters - re-enable everything */
+                enabled = allLetters.toMutableSet()
+            }
+            saveEnabledLetters(currentLanguage, enabled)
+            /* Reset the letter queue so it refills with the new selection */
+            clearLetterQueue()
+            dialog.dismiss()
+            recreate()
+        }
+
+        dialogView.findViewById<android.widget.Button>(R.id.btnAll).setOnClickListener {
+            for (letter in allLetters) {
+                toggleButtons[letter]?.let { tb ->
+                    tb.isChecked = true
+                    updateToggleBackground(tb)
+                }
+                enabled.add(letter)
+            }
+        }
+        dialogView.findViewById<android.widget.Button>(R.id.btnTop10).setOnClickListener {
+            for (letter in allLetters) {
+                val on = letter in top10
+                toggleButtons[letter]?.let { tb ->
+                    tb.isChecked = on
+                    updateToggleBackground(tb)
+                }
+                if (on) enabled.add(letter) else enabled.remove(letter)
+            }
+        }
+        dialogView.findViewById<android.widget.Button>(R.id.btnOnlyA).setOnClickListener {
+            /* Use the first letter of the current language's alphabet instead of
+             * hardcoding 'A', which doesn't exist in Japanese/Korean. */
+            val firstLetter = allLetters.first()
+            for (letter in allLetters) {
+                val on = letter == firstLetter
+                toggleButtons[letter]?.let { tb ->
+                    tb.isChecked = on
+                    updateToggleBackground(tb)
+                }
+                if (on) enabled.add(letter) else enabled.remove(letter)
+            }
+        }
+        val okBtn = dialogView.findViewById<ImageButton>(R.id.btnOK)
+        okBtn.setOnClickListener {
+            applyAndClose()
+        }
+        val cancelBtn = dialogView.findViewById<ImageButton>(R.id.btnCancel)
+        cancelBtn.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
+        dialog.window?.apply {
+            /* Replace the inset, rounded AlertDialog window with an opaque
+             * edge-to-edge surface that covers the complete app window. */
+            setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.WHITE))
+            decorView.setPadding(0, 0, 0, 0)
+            setLayout(
+                android.view.WindowManager.LayoutParams.MATCH_PARENT,
+                android.view.WindowManager.LayoutParams.MATCH_PARENT
+            )
+            decorView.systemUiVisibility = window.decorView.systemUiVisibility
+        }
+    }
+
+    private fun updateToggleBackground(tb: ToggleButton) {
+        if (tb.isChecked) {
+            tb.setBackgroundColor(androidx.core.content.ContextCompat.getColor(this, R.color.colorPrimary))
+            tb.setTextColor(Color.WHITE)
+        } else {
+            tb.setBackgroundColor(Color.parseColor("#E0E0E0"))
+            tb.setTextColor(Color.BLACK)
+        }
     }
 
     /* Force-show icons in a popup menu (PopupMenu hides them by default). */

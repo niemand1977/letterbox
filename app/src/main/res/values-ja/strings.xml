@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="menu_hamburger_a11y">メニュー</string>
+    <string name="menu_letters">文字</string>
     <string name="menu_about">このアプリについて</string>
     <string name="menu_hide">メニューを隠す</string>
     <string name="hide_menu_confirm_title">メニューを隠しますか？</string>
     <string name="hide_menu_confirm_message">メニューボタンが非表示になります。もう一度開くには、画面の右上隅を長押ししてください。</string>
+    <string name="letters_all">すべて</string>
+    <string name="letters_top10">トップ10</string>
+    <string name="letters_only_a">Aのみ</string>
+    <string name="dialog_back_a11y">戻る</string>
+    <string name="dialog_close_a11y">閉じる</string>
 </resources>

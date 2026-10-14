@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="menu_hamburger_a11y">메뉴</string>
+    <string name="menu_letters">글자</string>
     <string name="menu_about">정보</string>
     <string name="menu_hide">메뉴 숨기기</string>
     <string name="hide_menu_confirm_title">메뉴를 숨길까요?</string>
     <string name="hide_menu_confirm_message">메뉴 버튼이 보이지 않게 됩니다. 다시 열려면 화면 오른쪽 위 모서리를 길게 누르세요.</string>
+    <string name="letters_all">전체</string>
+    <string name="letters_top10">상위 10</string>
+    <string name="letters_only_a">A만</string>
+    <string name="dialog_back_a11y">뒤로</string>
+    <string name="dialog_close_a11y">닫기</string>
 </resources>
