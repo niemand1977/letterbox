@@ -85,6 +85,10 @@ class AnimalsOnTop : AppCompatActivity() {
     // position instead of the letter).
     private var previousButtonIndex: Int? = null
 
+    /* Tracks the drawable shown last round so a letter with several animals
+     * does not show the same picture twice in a row. */
+    private var previousDrawable: Int? = null
+
     // Resolved once at launch from the per-app locale (or the system locale
     // when none was picked): it decides which words/letters are used for the
     // whole session.
@@ -287,7 +291,13 @@ class AnimalsOnTop : AppCompatActivity() {
         repeatedLetter = null
         previousLetter = chosenLetter
 
-        val chosenDrawable = letterMap[chosenLetter]!!.random()
+        /* Avoid showing the same animal twice in a row when the letter has
+         * multiple drawables; with only one drawable repetition is unavoidable. */
+        val drawables = letterMap[chosenLetter]!!
+        val chosenDrawable = (if (drawables.size > 1) {
+            drawables.filter { it != previousDrawable }
+        } else drawables).random()
+        previousDrawable = chosenDrawable
         currentWord = LanguageMaps.getWord(chosenDrawable, currentLanguage)
         imageWidget.setImageDrawable(
             ResourcesCompat.getDrawable(resources, chosenDrawable, null)
