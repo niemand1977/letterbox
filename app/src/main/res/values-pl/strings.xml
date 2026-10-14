@@ -11,4 +11,9 @@
     <string name="letters_only_a">Tylko %s</string>
     <string name="dialog_apply_a11y">Zastosuj</string>
     <string name="dialog_close_a11y">Zamknij</string>
+    <string name="menu_progress">Zapisz postęp</string>
+    <string name="progress_reset_title">Zresetować postęp?</string>
+    <string name="progress_reset_message">Czy chcesz zresetować postęp wszystkich liter do zera?</string>
+    <string name="progress_reset_keep">Zachowaj</string>
+    <string name="dialog_ok">OK</string>
 </resources>

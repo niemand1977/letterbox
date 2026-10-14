@@ -11,4 +11,9 @@
     <string name="letters_only_a">%sのみ</string>
     <string name="dialog_apply_a11y">適用</string>
     <string name="dialog_close_a11y">閉じる</string>
+    <string name="menu_progress">進捗を保存</string>
+    <string name="progress_reset_title">進捗をリセットしますか？</string>
+    <string name="progress_reset_message">すべての文字の進捗をゼロにリセットしますか？</string>
+    <string name="progress_reset_keep">保持</string>
+    <string name="dialog_ok">おっけー</string>
 </resources>

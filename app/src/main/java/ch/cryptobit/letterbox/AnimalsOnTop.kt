@@ -30,10 +30,24 @@ import androidx.core.text.HtmlCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import java.io.File
 import java.lang.reflect.Method
+import org.json.JSONObject
 
 const val PREFS_NAME = "letterbox_prefs"
 const val PREF_ENABLED_LETTERS_PREFIX = "enabled_letters_"
+const val PREF_PROGRESS_ENABLED = "progress_enabled"
+const val PROGRESS_FILE = "letter_progress.json"
+const val PROGRESS_VERSION = 1
+
+/* A letter counts as mastered at this level; mastered letters appear less
+ * often in the queue. The level is capped at PROGRESS_MAX_LEVEL. */
+const val PROGRESS_THRESHOLD = 3
+const val PROGRESS_MAX_LEVEL = 5
+
+/* Levels decay by one per four weeks without seeing the letter, floored
+ * at zero. */
+const val PROGRESS_DECAY_MS = 4L * 7 * 24 * 60 * 60 * 1000
 
 class AnimalsOnTop : AppCompatActivity() {
 
@@ -203,11 +217,23 @@ class AnimalsOnTop : AppCompatActivity() {
     // When non-null, the next round repeats this letter (wrong answer retry).
     private var repeatedLetter: Char? = null
 
-    /* Letter queue: each enabled letter appears exactly 2x before the queue
-     * is refilled, so the distribution stays even. */
+    /* True while the current round asks a fresh letter from the queue; false
+     * on a retry round after a wrong answer. Progress counts first tries only. */
+    private var firstTry = true
+
+    /* Letter queue: each enabled letter appears exactly 2x before the queue is
+     * refilled, so the distribution stays even. With progress saving enabled,
+     * letters at a mastered effective level appear only 1x, so well-known
+     * letters are offered less often. */
     private fun refillLetterQueue(): MutableList<Char> {
         val queue = letterMap.keys.toMutableList()
-        queue.addAll(letterMap.keys)
+        if (isProgressEnabled()) {
+            queue.addAll(letterMap.keys.filter {
+                getLetterProgress(currentLanguage, it) < PROGRESS_THRESHOLD
+            })
+        } else {
+            queue.addAll(letterMap.keys)
+        }
         queue.shuffle()
         return queue
     }
@@ -240,10 +266,11 @@ class AnimalsOnTop : AppCompatActivity() {
         /* On a retry after a wrong answer the same letter is asked again; a
          * fresh round pops the next letter off the queue. */
         val isRetry = repeatedLetter != null && repeatedLetter in letterMap.keys
+        firstTry = !isRetry
         val chosenLetter = if (isRetry) repeatedLetter!! else popNextLetter()
         repeatedLetter = null
         previousLetter = chosenLetter
-        Log.d(TAG, "Chosen letter $chosenLetter")
+        Log.i(TAG, "PROGRESS_DEBUG: firstTry=$firstTry repeatedLetter=$repeatedLetter chosenLetter=$chosenLetter progressOn=${isProgressEnabled()}")
 
         val chosenDrawable = letterMap[chosenLetter]!!.random()
         currentWord = LanguageMaps.getWord(chosenDrawable, currentLanguage)
@@ -294,6 +321,16 @@ class AnimalsOnTop : AppCompatActivity() {
         for (btn in allButtons) {
             btn.isClickable = false
             btn.isPressed = false
+        }
+
+        Log.i(TAG, "PROGRESS_DEBUG: onAnswer correct=$correct firstTry=$firstTry")
+        /* Correct first tries increase the letter's level, wrong first tries
+         * decrease it; retry rounds do not affect progress at all. */
+        if (isProgressEnabled() && firstTry) {
+            val before = getLetterProgress(currentLanguage, chosenLetter)
+            recordAnswer(currentLanguage, chosenLetter, correct)
+            val after = getLetterProgress(currentLanguage, chosenLetter)
+            Log.i(TAG, "PROGRESS_DEBUG: recordAnswer letter=$chosenLetter correct=$correct before=$before after=$after")
         }
 
         soundPool.play(if (correct) soundYes else soundNo, oneF, oneF, 0, 0, oneF)
@@ -418,6 +455,92 @@ class AnimalsOnTop : AppCompatActivity() {
                 String(letters.toCharArray())).apply()
     }
 
+    /* --- Progress --- */
+
+    private fun isProgressEnabled(): Boolean {
+        return getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .getBoolean(PREF_PROGRESS_ENABLED, false)
+    }
+
+    private fun setProgressEnabled(enabled: Boolean) {
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .edit().putBoolean(PREF_PROGRESS_ENABLED, enabled).apply()
+    }
+
+    /* Progress lives in its own JSON file (excluded from cloud backup but
+     * allowed to move with device-to-device transfer) with a version field,
+     * so a future format change can be migrated instead of deleted. Per
+     * language and letter it stores a level and when the letter was last
+     * seen:
+     * {"version":1,"languages":{"en":{"A":{"level":2,"lastSeen":...}}}}
+     */
+    private fun loadProgressJson(): JSONObject {
+        val file = File(filesDir, PROGRESS_FILE)
+        if (!file.exists()) return JSONObject().put("version", PROGRESS_VERSION)
+        val root = try {
+            JSONObject(file.readText())
+        } catch (e: Exception) {
+            Log.w(TAG, "PROGRESS: unreadable progress file, starting empty", e)
+            return JSONObject().put("version", PROGRESS_VERSION)
+        }
+        val version = root.optInt("version", -1)
+        if (version != PROGRESS_VERSION) {
+            Log.w(TAG, "PROGRESS: unsupported file version $version, starting empty")
+            return JSONObject().put("version", PROGRESS_VERSION)
+        }
+        return root
+    }
+
+    /* Levels decay by one per PROGRESS_DECAY_MS since last seen, floored at
+     * zero. The stored level is left untouched here and only rewritten when
+     * the letter is answered again. */
+    private fun effectiveLevel(level: Int, lastSeen: Long, now: Long): Int {
+        val decay = ((now - lastSeen).coerceAtLeast(0) / PROGRESS_DECAY_MS).toInt()
+        return (level - decay).coerceAtLeast(0)
+    }
+
+    /* Returns the letter's effective (decay-adjusted) level in the given
+     * language; zero when the letter was never seen. */
+    private fun getLetterProgress(language: AppLanguage, letter: Char): Int {
+        val entry = loadProgressJson()
+            .optJSONObject("languages")
+            ?.optJSONObject(language.code)
+            ?.optJSONObject(letter.toString()) ?: return 0
+        return effectiveLevel(
+            entry.optInt("level"), entry.optLong("lastSeen"),
+            System.currentTimeMillis()
+        )
+    }
+
+    /* First the stored level decays to its current value, then a correct
+     * first try adds one level and a wrong one subtracts one, clamped to
+     * 0..PROGRESS_MAX_LEVEL, and lastSeen is set to now. Retry rounds never
+     * reach this method. */
+    private fun recordAnswer(language: AppLanguage, letter: Char, correct: Boolean) {
+        val now = System.currentTimeMillis()
+        val root = loadProgressJson()
+        val languages = root.optJSONObject("languages")
+            ?: JSONObject().also { root.put("languages", it) }
+        val langObj = languages.optJSONObject(language.code)
+            ?: JSONObject().also { languages.put(language.code, it) }
+        val level = langObj.optJSONObject(letter.toString())?.let {
+            effectiveLevel(it.optInt("level"), it.optLong("lastSeen"), now)
+        } ?: 0
+        val newLevel = (level + if (correct) 1 else -1).coerceIn(0, PROGRESS_MAX_LEVEL)
+        langObj.put(letter.toString(), JSONObject()
+            .put("level", newLevel)
+            .put("lastSeen", now))
+        File(filesDir, PROGRESS_FILE).writeText(root.toString())
+    }
+
+    /* Removes all stored progress for every language; the versioned file
+     * itself is kept. */
+    private fun resetAllProgress() {
+        File(filesDir, PROGRESS_FILE)
+            .writeText(JSONObject().put("version", PROGRESS_VERSION).toString())
+        Log.i(TAG, "All progress reset to zero")
+    }
+
     /* --- Hamburger popup menu --- */
 
     private fun showHamburgerMenu(anchor: View) {
@@ -439,9 +562,11 @@ class AnimalsOnTop : AppCompatActivity() {
         lettersItem.setIcon(R.drawable.ic_letters)
         /* The checked state is drawn as the item's icon, aligned with the
          * other icons; isCheckable would add a second checkmark on the right. */
-        val hideItem = menu.add(0, R.id.menu_hide, 2, R.string.menu_hide)
+        val progressItem = menu.add(0, R.id.menu_progress, 2, R.string.menu_progress)
+        progressItem.setIcon(if (isProgressEnabled()) R.drawable.ic_check_box else R.drawable.ic_check_box_outline)
+        val hideItem = menu.add(0, R.id.menu_hide, 3, R.string.menu_hide)
         hideItem.setIcon(if (menuHidden) R.drawable.ic_check_box else R.drawable.ic_check_box_outline)
-        val aboutItem = menu.add(0, R.id.menu_about, 3, R.string.menu_about)
+        val aboutItem = menu.add(0, R.id.menu_about, 4, R.string.menu_about)
         aboutItem.setIcon(android.R.drawable.ic_menu_info_details)
         forceShowPopupIcons(popup)
         popup.setOnMenuItemClickListener { item ->
@@ -452,6 +577,27 @@ class AnimalsOnTop : AppCompatActivity() {
                 }
                 R.id.menu_letters -> {
                     showLetterSelectionMenu()
+                    true
+                }
+                R.id.menu_progress -> {
+                    val newState = !isProgressEnabled()
+                    setProgressEnabled(newState)
+                    /* Drop the letter queue so the new weighting takes effect
+                     * on the next round. */
+                    clearLetterQueue()
+                    Log.i(TAG, "Progress saving ${if (newState) "enabled" else "disabled"}")
+                    /* When progress saving is turned off, ask whether to reset
+                     * all stored progress for every language to zero. */
+                    if (!newState) {
+                        AlertDialog.Builder(this)
+                            .setTitle(R.string.progress_reset_title)
+                            .setMessage(R.string.progress_reset_message)
+                            .setPositiveButton(R.string.dialog_ok) { _, _ ->
+                                resetAllProgress()
+                            }
+                            .setNegativeButton(R.string.progress_reset_keep, null)
+                            .show()
+                    }
                     true
                 }
                 R.id.menu_about -> {
@@ -491,6 +637,7 @@ class AnimalsOnTop : AppCompatActivity() {
         val allLetters = LanguageMaps.getAlphabet(currentLanguage)
         val top10 = LanguageMaps.getTop10Letters(currentLanguage)
         var enabled = getEnabledLetters(currentLanguage).toMutableSet()
+        val progressOn = isProgressEnabled()
 
         val dialogView = layoutInflater.inflate(R.layout.letter_selection_dialog, null)
         val grid = dialogView.findViewById<LinearLayout>(R.id.letterGrid)
@@ -544,6 +691,43 @@ class AnimalsOnTop : AppCompatActivity() {
                 }
             }
             container.addView(tb)
+
+            val count = getLetterProgress(currentLanguage, letter)
+            if (progressOn && count > 0) {
+                val density = resources.displayMetrics.density
+                val mastered = count >= PROGRESS_THRESHOLD
+                val badge = TextView(this).apply {
+                    text = count.toString()
+                    textSize = 11f
+                    setTextColor(Color.parseColor(if (mastered) "#FFFFFF" else "#616161"))
+                    gravity = Gravity.CENTER
+                    background = android.graphics.drawable.GradientDrawable().apply {
+                        shape = android.graphics.drawable.GradientDrawable.RECTANGLE
+                        setColor(Color.parseColor(if (mastered) "#4CAF50" else "#F5F5F5"))
+                        setStroke(
+                            (1 * density).toInt(),
+                            Color.parseColor(if (mastered) "#2E7D32" else "#BDBDBD")
+                        )
+                        /* Corner radii order: top-left, top-right, bottom-right,
+                         * bottom-left. Only the bottom-left corner is rounded. */
+                        cornerRadii = floatArrayOf(
+                            0f, 0f,
+                            0f, 0f,
+                            0f, 0f,
+                            10 * density, 10 * density
+                        )
+                    }
+                    elevation = 8 * density
+                    val badgeSize = (22 * density).toInt()
+                    layoutParams = android.widget.FrameLayout.LayoutParams(
+                        badgeSize,
+                        badgeSize,
+                        Gravity.TOP or Gravity.END
+                    )
+                    setOnClickListener { tb.performClick() }
+                }
+                container.addView(badge)
+            }
 
             toggleButtons[letter] = tb
             row!!.addView(container)

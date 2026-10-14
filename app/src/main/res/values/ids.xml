@@ -2,6 +2,7 @@
 <resources>
     <item name="menu_language" type="id" />
     <item name="menu_letters" type="id" />
+    <item name="menu_progress" type="id" />
     <item name="menu_about" type="id" />
     <item name="menu_hide" type="id" />
 </resources>
