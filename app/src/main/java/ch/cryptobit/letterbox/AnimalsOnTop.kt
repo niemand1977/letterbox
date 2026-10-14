@@ -268,6 +268,7 @@ class AnimalsOnTop : AppCompatActivity() {
 
     private fun loadRound() {
         updateLetterTextSize()
+        setButtonsVisible(true)
         val shuffledButtons = letterWidgets.shuffled().toMutableList()
         // Guarantee the correct answer doesn't land on the same physical
         // button as last round, regardless of how the shuffle came out.
@@ -345,17 +346,31 @@ class AnimalsOnTop : AppCompatActivity() {
 
         soundPool.play(if (correct) soundYes else soundNo, oneF, oneF, 0, 0, oneF)
 
+        /* Speak the animal's name shortly after the feedback sound, but only
+         * after a correct answer, so the child is not confused by hearing the
+         * name while still learning the right letter. */
+        if (correct) {
+            handler.postDelayed({
+                currentWord?.let { word ->
+                    if (ttsReady) tts.speak(word, TextToSpeech.QUEUE_FLUSH, null, null)
+                }
+            }, 400)
+        }
+
         // Flash the tapped letter green (correct) or red (wrong)
         val flashColor = if (correct) Color.parseColor("#4CAF50") else Color.parseColor("#F44336")
         flashTextColor(tapped, flashColor)
 
         if (correct) {
-            // Correct answer: move on to a new letter after a short pause
-            handler.postDelayed({ loadRound() }, 800)
+            /* Pause long enough for the spoken word to finish, hide the
+             * buttons briefly, then move on to a new letter. */
+            handler.postDelayed({ setButtonsVisible(false) }, 1550)
+            handler.postDelayed({ loadRound() }, 1750)
         } else {
             // Wrong answer: repeat the same letter so the child gets another chance
             repeatedLetter = chosenLetter
-            handler.postDelayed({ loadRound() }, 400)
+            handler.postDelayed({ setButtonsVisible(false) }, 400)
+            handler.postDelayed({ loadRound() }, 600)
         }
     }
 
