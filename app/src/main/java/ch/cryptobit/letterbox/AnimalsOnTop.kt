@@ -254,6 +254,12 @@ class AnimalsOnTop : AppCompatActivity() {
         return letter
     }
 
+    /* Drops the pending queue so the next round refills it, e.g. when the
+     * progress-weighting toggle changes which letters belong in it. */
+    private fun clearLetterQueue() {
+        letterQueue.clear()
+    }
+
     private fun loadRound() {
         updateLetterTextSize()
         val shuffledButtons = letterWidgets.shuffled().toMutableList()
@@ -497,8 +503,12 @@ class AnimalsOnTop : AppCompatActivity() {
             return freshProgressRoot()
         }
         val version = root.optInt("version", -1)
-        if (version != PROGRESS_VERSION) {
-            Log.w(TAG, "Unsupported progress file version $version; keeping it intact for a future migration")
+        /* A versioned file whose body does not match the expected shape is
+         * corrupt: optJSONObject would silently treat foreign types as
+         * absent and the next write would discard the stored levels. */
+        val languages = root.opt("languages")
+        if (version != PROGRESS_VERSION || (languages != null && languages !is JSONObject)) {
+            Log.w(TAG, "Progress file unreadable (version=$version); keeping it intact for a future migration")
             progressWritable = false
             return freshProgressRoot()
         }
@@ -508,23 +518,25 @@ class AnimalsOnTop : AppCompatActivity() {
     private fun freshProgressRoot(): JSONObject =
         JSONObject().put("version", PROGRESS_VERSION).also { progressRoot = it }
 
-    private fun saveProgressJson(root: JSONObject) {
-        if (!progressWritable) {
+    private fun saveProgressJson(root: JSONObject, force: Boolean = false): Boolean {
+        if (!force && !progressWritable) {
             Log.w(TAG, "Progress not written: stored file needs a future migration")
-            return
+            return false
         }
         val stream = try {
             progressFile.startWrite()
         } catch (e: IOException) {
             Log.w(TAG, "Could not open progress file for writing", e)
-            return
+            return false
         }
-        try {
+        return try {
             stream.write(root.toString().toByteArray(Charsets.UTF_8))
             progressFile.finishWrite(stream)
+            true
         } catch (e: IOException) {
             Log.w(TAG, "Could not write progress file", e)
             progressFile.failWrite(stream)
+            false
         }
     }
 
@@ -572,10 +584,16 @@ class AnimalsOnTop : AppCompatActivity() {
     }
 
     /* Removes all stored progress for every language; the versioned file
-     * itself is kept. */
+     * itself is kept. An explicit reset may overwrite a file that regular
+     * writes refuse to touch - the user asked for it, and the result is a
+     * valid file again, so writing is re-enabled afterwards. */
     private fun resetAllProgress() {
-        saveProgressJson(freshProgressRoot())
-        Log.i(TAG, "All progress reset to zero")
+        if (saveProgressJson(freshProgressRoot(), force = true)) {
+            progressWritable = true
+            Log.i(TAG, "All progress reset to zero")
+        } else {
+            Log.w(TAG, "Progress reset applied in memory only; stored file left untouched")
+        }
     }
 
     /* --- Hamburger popup menu --- */

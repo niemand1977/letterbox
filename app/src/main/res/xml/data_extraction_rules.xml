@@ -2,6 +2,7 @@
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="file" path="letter_progress.json" />
+        <exclude domain="file" path="letter_progress.json.bak" />
     </cloud-backup>
     <device-transfer>
         <!-- The progress file is intentionally transferable to a new device. -->
