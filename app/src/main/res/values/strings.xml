@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">LetterBox</string>
+    <string name="app_name" translatable="false">LetterBox</string>
     <string name="menu_hamburger_a11y">Menu</string>
     <string name="menu_letters">Letters</string>
     <string name="menu_about">About</string>
