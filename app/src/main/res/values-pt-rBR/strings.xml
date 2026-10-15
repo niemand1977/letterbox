@@ -15,5 +15,5 @@
     <string name="progress_reset_title">Resetar o progresso?</string>
     <string name="progress_reset_message">Deseja resetar o progresso de todas as letras para zero?</string>
     <string name="progress_reset_keep">Manter</string>
-    <string name="dialog_ok">OK</string>
+    <string name="progress_reset_confirm">Resetar</string>
 </resources>

@@ -15,5 +15,5 @@
     <string name="progress_reset_title">Fortschritt zurücksetzen?</string>
     <string name="progress_reset_message">Möchtest du den Fortschritt für alle Buchstaben auf null zurücksetzen?</string>
     <string name="progress_reset_keep">Behalten</string>
-    <string name="dialog_ok">OK</string>
+    <string name="progress_reset_confirm">Zurücksetzen</string>
 </resources>

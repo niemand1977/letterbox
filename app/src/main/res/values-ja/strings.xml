@@ -15,5 +15,5 @@
     <string name="progress_reset_title">進捗をリセットしますか？</string>
     <string name="progress_reset_message">すべての文字の進捗をゼロにリセットしますか？</string>
     <string name="progress_reset_keep">保持</string>
-    <string name="dialog_ok">おっけー</string>
+    <string name="progress_reset_confirm">リセット</string>
 </resources>

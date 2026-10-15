@@ -629,7 +629,7 @@ class AnimalsOnTop : AppCompatActivity() {
                         AlertDialog.Builder(this)
                             .setTitle(R.string.progress_reset_title)
                             .setMessage(R.string.progress_reset_message)
-                            .setPositiveButton(R.string.dialog_ok) { _, _ ->
+                            .setPositiveButton(R.string.progress_reset_confirm) { _, _ ->
                                 resetAllProgress()
                             }
                             .setNegativeButton(R.string.progress_reset_keep, null)
