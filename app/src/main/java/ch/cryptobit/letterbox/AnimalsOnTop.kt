@@ -30,7 +30,10 @@ import androidx.core.text.HtmlCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.util.AtomicFile
 import java.io.File
+import java.io.FileNotFoundException
+import java.io.IOException
 import java.lang.reflect.Method
 import org.json.JSONObject
 
@@ -270,7 +273,6 @@ class AnimalsOnTop : AppCompatActivity() {
         val chosenLetter = if (isRetry) repeatedLetter!! else popNextLetter()
         repeatedLetter = null
         previousLetter = chosenLetter
-        Log.i(TAG, "PROGRESS_DEBUG: firstTry=$firstTry repeatedLetter=$repeatedLetter chosenLetter=$chosenLetter progressOn=${isProgressEnabled()}")
 
         val chosenDrawable = letterMap[chosenLetter]!!.random()
         currentWord = LanguageMaps.getWord(chosenDrawable, currentLanguage)
@@ -323,14 +325,10 @@ class AnimalsOnTop : AppCompatActivity() {
             btn.isPressed = false
         }
 
-        Log.i(TAG, "PROGRESS_DEBUG: onAnswer correct=$correct firstTry=$firstTry")
         /* Correct first tries increase the letter's level, wrong first tries
          * decrease it; retry rounds do not affect progress at all. */
         if (isProgressEnabled() && firstTry) {
-            val before = getLetterProgress(currentLanguage, chosenLetter)
             recordAnswer(currentLanguage, chosenLetter, correct)
-            val after = getLetterProgress(currentLanguage, chosenLetter)
-            Log.i(TAG, "PROGRESS_DEBUG: recordAnswer letter=$chosenLetter correct=$correct before=$before after=$after")
         }
 
         soundPool.play(if (correct) soundYes else soundNo, oneF, oneF, 0, 0, oneF)
@@ -467,6 +465,19 @@ class AnimalsOnTop : AppCompatActivity() {
             .edit().putBoolean(PREF_PROGRESS_ENABLED, enabled).apply()
     }
 
+    /* AtomicFile writes via a temporary backup so an interrupted write
+     * cannot corrupt the stored file; on read it restores that backup
+     * automatically. */
+    private val progressFile by lazy { AtomicFile(File(filesDir, PROGRESS_FILE)) }
+
+    /* The progress document is loaded from disk once and then mutated in
+     * memory; writes only happen when progressWritable is true. A file that
+     * is unreadable or carries an unknown version is left untouched so a
+     * future version can still migrate it, and nothing is written for the
+     * rest of the session. */
+    private var progressRoot: JSONObject? = null
+    private var progressWritable = true
+
     /* Progress lives in its own JSON file (excluded from cloud backup but
      * allowed to move with device-to-device transfer) with a version field,
      * so a future format change can be migrated instead of deleted. Per
@@ -475,20 +486,46 @@ class AnimalsOnTop : AppCompatActivity() {
      * {"version":1,"languages":{"en":{"A":{"level":2,"lastSeen":...}}}}
      */
     private fun loadProgressJson(): JSONObject {
-        val file = File(filesDir, PROGRESS_FILE)
-        if (!file.exists()) return JSONObject().put("version", PROGRESS_VERSION)
+        progressRoot?.let { return it }
         val root = try {
-            JSONObject(file.readText())
+            JSONObject(String(progressFile.readFully()))
+        } catch (e: FileNotFoundException) {
+            return freshProgressRoot()
         } catch (e: Exception) {
-            Log.w(TAG, "PROGRESS: unreadable progress file, starting empty", e)
-            return JSONObject().put("version", PROGRESS_VERSION)
+            Log.w(TAG, "Progress file unreadable; keeping it intact for a future migration", e)
+            progressWritable = false
+            return freshProgressRoot()
         }
         val version = root.optInt("version", -1)
         if (version != PROGRESS_VERSION) {
-            Log.w(TAG, "PROGRESS: unsupported file version $version, starting empty")
-            return JSONObject().put("version", PROGRESS_VERSION)
+            Log.w(TAG, "Unsupported progress file version $version; keeping it intact for a future migration")
+            progressWritable = false
+            return freshProgressRoot()
         }
-        return root
+        return root.also { progressRoot = it }
+    }
+
+    private fun freshProgressRoot(): JSONObject =
+        JSONObject().put("version", PROGRESS_VERSION).also { progressRoot = it }
+
+    private fun saveProgressJson(root: JSONObject) {
+        if (!progressWritable) {
+            Log.w(TAG, "Progress not written: stored file needs a future migration")
+            return
+        }
+        val stream = try {
+            progressFile.startWrite()
+        } catch (e: IOException) {
+            Log.w(TAG, "Could not open progress file for writing", e)
+            return
+        }
+        try {
+            stream.write(root.toString().toByteArray(Charsets.UTF_8))
+            progressFile.finishWrite(stream)
+        } catch (e: IOException) {
+            Log.w(TAG, "Could not write progress file", e)
+            progressFile.failWrite(stream)
+        }
     }
 
     /* Levels decay by one per PROGRESS_DECAY_MS since last seen, floored at
@@ -519,6 +556,7 @@ class AnimalsOnTop : AppCompatActivity() {
     private fun recordAnswer(language: AppLanguage, letter: Char, correct: Boolean) {
         val now = System.currentTimeMillis()
         val root = loadProgressJson()
+        if (!progressWritable) return
         val languages = root.optJSONObject("languages")
             ?: JSONObject().also { root.put("languages", it) }
         val langObj = languages.optJSONObject(language.code)
@@ -530,14 +568,13 @@ class AnimalsOnTop : AppCompatActivity() {
         langObj.put(letter.toString(), JSONObject()
             .put("level", newLevel)
             .put("lastSeen", now))
-        File(filesDir, PROGRESS_FILE).writeText(root.toString())
+        saveProgressJson(root)
     }
 
     /* Removes all stored progress for every language; the versioned file
      * itself is kept. */
     private fun resetAllProgress() {
-        File(filesDir, PROGRESS_FILE)
-            .writeText(JSONObject().put("version", PROGRESS_VERSION).toString())
+        saveProgressJson(freshProgressRoot())
         Log.i(TAG, "All progress reset to zero")
     }
 
