@@ -35,8 +35,8 @@
                     android:layout_height="48dp"
                     android:layout_marginEnd="4dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/dialog_back_a11y"
-                    android:src="@drawable/ic_arrow_back" />
+                    android:contentDescription="@string/dialog_apply_a11y"
+                    android:src="@drawable/ic_check" />
 
                 <ImageButton
                     android:id="@+id/btnCancel"

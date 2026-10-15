@@ -9,6 +9,6 @@
     <string name="letters_all">전체</string>
     <string name="letters_top10">상위 10</string>
     <string name="letters_only_a">%s만</string>
-    <string name="dialog_back_a11y">뒤로</string>
+    <string name="dialog_apply_a11y">적용</string>
     <string name="dialog_close_a11y">닫기</string>
 </resources>

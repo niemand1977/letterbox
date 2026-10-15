@@ -9,6 +9,6 @@
     <string name="letters_all">Todas</string>
     <string name="letters_top10">Top 10</string>
     <string name="letters_only_a">Solo %s</string>
-    <string name="dialog_back_a11y">Atrás</string>
+    <string name="dialog_apply_a11y">Aplicar</string>
     <string name="dialog_close_a11y">Cerrar</string>
 </resources>

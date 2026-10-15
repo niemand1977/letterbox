@@ -9,6 +9,6 @@
     <string name="letters_all">すべて</string>
     <string name="letters_top10">トップ10</string>
     <string name="letters_only_a">%sのみ</string>
-    <string name="dialog_back_a11y">戻る</string>
+    <string name="dialog_apply_a11y">適用</string>
     <string name="dialog_close_a11y">閉じる</string>
 </resources>
