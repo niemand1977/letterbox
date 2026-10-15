@@ -590,10 +590,12 @@ class AnimalsOnTop : AppCompatActivity() {
                 if (on) enabled.add(letter) else enabled.remove(letter)
             }
         }
-        dialogView.findViewById<android.widget.Button>(R.id.btnOnlyA).setOnClickListener {
-            /* Use the first letter of the current language's alphabet instead of
-             * hardcoding 'A', which doesn't exist in Japanese/Korean. */
-            val firstLetter = allLetters.first()
+        val onlyABtn = dialogView.findViewById<android.widget.Button>(R.id.btnOnlyA)
+        /* The label carries the first letter of the current alphabet instead
+         * of hardcoding 'A', which doesn't exist in Japanese/Korean. */
+        val firstLetter = allLetters.first()
+        onlyABtn.text = getString(R.string.letters_only_a, firstLetter.toString())
+        onlyABtn.setOnClickListener {
             for (letter in allLetters) {
                 val on = letter == firstLetter
                 toggleButtons[letter]?.let { tb ->

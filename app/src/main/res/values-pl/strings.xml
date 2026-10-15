@@ -8,7 +8,7 @@
     <string name="hide_menu_confirm_message">Przycisk menu stanie się niewidoczny. Aby otworzyć go ponownie, przytrzymaj prawy górny róg ekranu.</string>
     <string name="letters_all">Wszystkie</string>
     <string name="letters_top10">Top 10</string>
-    <string name="letters_only_a">Tylko A</string>
+    <string name="letters_only_a">Tylko %s</string>
     <string name="dialog_back_a11y">Wstecz</string>
     <string name="dialog_close_a11y">Zamknij</string>
 </resources>

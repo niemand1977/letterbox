@@ -8,7 +8,7 @@
     <string name="hide_menu_confirm_message">Le bouton de menu deviendra invisible. Pour l\'ouvrir à nouveau, appuyez longuement sur le coin supérieur droit de l\'écran.</string>
     <string name="letters_all">Toutes</string>
     <string name="letters_top10">Top 10</string>
-    <string name="letters_only_a">Seulement A</string>
+    <string name="letters_only_a">Seulement %s</string>
     <string name="dialog_back_a11y">Retour</string>
     <string name="dialog_close_a11y">Fermer</string>
 </resources>

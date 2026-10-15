@@ -9,7 +9,7 @@
     <string name="hide_menu_confirm_message">The menu button will become invisible. To open the menu again, press and hold the top-right corner of the screen.</string>
     <string name="letters_all">All</string>
     <string name="letters_top10">Top 10</string>
-    <string name="letters_only_a">Only A</string>
+    <string name="letters_only_a">Only %s</string>
     <string name="dialog_back_a11y">Back</string>
     <string name="dialog_close_a11y">Close</string>
 </resources>
