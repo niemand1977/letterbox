@@ -225,12 +225,6 @@ class AnimalsOnTop : AppCompatActivity() {
         return letter
     }
 
-    /* Drops the pending queue so the next round refills it, e.g. after the
-     * enabled letters changed. */
-    private fun clearLetterQueue() {
-        letterQueue.clear()
-    }
-
     private fun loadRound() {
         updateLetterTextSize()
         val shuffledButtons = letterWidgets.shuffled().toMutableList()
@@ -565,8 +559,6 @@ class AnimalsOnTop : AppCompatActivity() {
                 enabled = allLetters.toMutableSet()
             }
             saveEnabledLetters(currentLanguage, enabled)
-            /* Reset the letter queue so it refills with the new selection */
-            clearLetterQueue()
             dialog.dismiss()
             recreate()
         }
