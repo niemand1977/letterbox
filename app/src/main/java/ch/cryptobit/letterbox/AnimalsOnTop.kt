@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.speech.tts.TextToSpeech
-import android.text.Html
 import android.text.method.LinkMovementMethod
 import android.util.Log
 import android.util.TypedValue
@@ -27,6 +26,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.os.LocaleListCompat
+import androidx.core.text.HtmlCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -347,7 +347,7 @@ class AnimalsOnTop : AppCompatActivity() {
         val textView = TextView(this)
         val padding = (16 * resources.displayMetrics.density).toInt()
         textView.setPadding(padding, padding, padding, padding)
-        textView.text = Html.fromHtml(html, Html.FROM_HTML_MODE_COMPACT)
+        textView.text = HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_COMPACT)
         textView.movementMethod = LinkMovementMethod.getInstance()
         AlertDialog.Builder(this)
             .setView(textView)
