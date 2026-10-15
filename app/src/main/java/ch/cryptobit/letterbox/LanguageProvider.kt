@@ -549,4 +549,34 @@ object LanguageMaps {
             .firstOrNull { it.drawable == drawable }
             ?.translations?.get(language)?.second
     }
+
+    fun getTop10Letters(language: AppLanguage): List<Char> {
+        val available = getAlphabet(language).toSet()
+        return TOP10_BY_LANGUAGE[language]?.filter { it in available } ?: emptyList()
+    }
+
+    /* The 10 most frequent letters per language (by percentage in standard text).
+     * Sources:
+     *   German:     E N I S R A T D H U
+     *   English:    E T A O I N S H R D
+     *   French:     E A S I N T R L O U
+     *   Spanish:    E A O S N R I L D T
+     *   Italian:    E A I O N L R T S C
+     *   Korean:     ㅇ ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅅ ㅈ ㅊ (filtered to available consonant Jamo)
+     *   Japanese:   の は て に を た が と し で (most frequent hiragana in text)
+     *   Polish:     A I E O Z N W R S C
+     *   Portuguese: A E O S I R M N D T
+     * Only letters that actually have animals in this app are included, so the
+     * result may contain fewer than 10 entries for some languages. */
+    private val TOP10_BY_LANGUAGE: Map<AppLanguage, List<Char>> = mapOf(
+        AppLanguage.ENGLISH to listOf('E', 'T', 'A', 'O', 'I', 'N', 'S', 'H', 'R', 'D'),
+        AppLanguage.GERMAN to listOf('E', 'N', 'I', 'S', 'R', 'A', 'T', 'D', 'H', 'U'),
+        AppLanguage.FRENCH to listOf('E', 'A', 'S', 'I', 'N', 'T', 'R', 'L', 'O', 'U'),
+        AppLanguage.SPANISH to listOf('E', 'A', 'O', 'S', 'N', 'R', 'I', 'L', 'D', 'T'),
+        AppLanguage.ITALIAN to listOf('E', 'A', 'I', 'O', 'N', 'L', 'R', 'T', 'S', 'C'),
+        AppLanguage.KOREAN to listOf('ㅇ', 'ㄱ', 'ㄴ', 'ㄷ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅅ', 'ㅈ', 'ㅊ'),
+        AppLanguage.JAPANESE to listOf('の', 'は', 'て', 'に', 'を', 'た', 'が', 'と', 'し', 'で'),
+        AppLanguage.POLISH to listOf('A', 'I', 'E', 'O', 'Z', 'N', 'W', 'R', 'S', 'C'),
+        AppLanguage.PORTUGUESE_BR to listOf('A', 'E', 'O', 'S', 'I', 'R', 'M', 'N', 'D', 'T')
+    )
 }

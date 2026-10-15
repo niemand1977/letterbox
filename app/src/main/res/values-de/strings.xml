@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="menu_hamburger_a11y">Menü</string>
+    <string name="menu_letters">Buchstaben</string>
     <string name="menu_about">Über</string>
     <string name="menu_hide">Menü ausblenden</string>
     <string name="hide_menu_confirm_title">Menü ausblenden?</string>
     <string name="hide_menu_confirm_message">Der Menü-Button wird unsichtbar. Zum erneuten Öffnen die obere rechte Bildschirmecke gedrückt halten.</string>
+    <string name="letters_all">Alle</string>
+    <string name="letters_top10">Top 10</string>
+    <string name="letters_only_a">Nur %s</string>
+    <string name="dialog_apply_a11y">Übernehmen</string>
+    <string name="dialog_close_a11y">Schließen</string>
 </resources>

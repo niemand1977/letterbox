@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item name="menu_language" type="id" />
+    <item name="menu_letters" type="id" />
     <item name="menu_about" type="id" />
     <item name="menu_hide" type="id" />
 </resources>

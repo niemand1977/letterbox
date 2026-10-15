@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="menu_hamburger_a11y">Menu</string>
+    <string name="menu_letters">Litery</string>
     <string name="menu_about">O aplikacji</string>
     <string name="menu_hide">Ukryj menu</string>
     <string name="hide_menu_confirm_title">Ukryć menu?</string>
     <string name="hide_menu_confirm_message">Przycisk menu stanie się niewidoczny. Aby otworzyć go ponownie, przytrzymaj prawy górny róg ekranu.</string>
+    <string name="letters_all">Wszystkie</string>
+    <string name="letters_top10">Top 10</string>
+    <string name="letters_only_a">Tylko %s</string>
+    <string name="dialog_apply_a11y">Zastosuj</string>
+    <string name="dialog_close_a11y">Zamknij</string>
 </resources>
