@@ -11,4 +11,9 @@
     <string name="letters_only_a">Solo %s</string>
     <string name="dialog_apply_a11y">Applica</string>
     <string name="dialog_close_a11y">Chiudi</string>
+    <string name="menu_progress">Salva i progressi</string>
+    <string name="progress_reset_title">Azzerare i progressi?</string>
+    <string name="progress_reset_message">Vuoi azzerare i progressi di tutte le lettere?</string>
+    <string name="progress_reset_keep">Conserva</string>
+    <string name="progress_reset_confirm">Azzera</string>
 </resources>

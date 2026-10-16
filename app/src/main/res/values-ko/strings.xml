@@ -11,4 +11,9 @@
     <string name="letters_only_a">%s만</string>
     <string name="dialog_apply_a11y">적용</string>
     <string name="dialog_close_a11y">닫기</string>
+    <string name="menu_progress">진행 상황 저장</string>
+    <string name="progress_reset_title">진행 상황을 초기화하시겠습니까?</string>
+    <string name="progress_reset_message">모든 글자의 진행 상황을 0으로 초기화하시겠습니까?</string>
+    <string name="progress_reset_keep">유지</string>
+    <string name="progress_reset_confirm">초기화</string>
 </resources>
