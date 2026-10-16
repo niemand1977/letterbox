@@ -84,5 +84,6 @@ Self-generated assets
 The following icons were generated for this project and are released
 under the same license as the project itself:
 
-- drawable/ic_letters.png — outlined "ABC" glyphs rendered with
-  DejaVu Sans Bold (DejaVu Fonts License, Bitstream Vera derivative)
+- drawable/src/ic_letters.png (scaled into drawable-*dpi/ by "make menu-icons"):
+  outlined "ABC" glyphs rendered with DejaVu Sans Bold (DejaVu Fonts
+  License, Bitstream Vera derivative)

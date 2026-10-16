@@ -6,7 +6,9 @@ SVGs += chameleon-30238.svg       igel-hedgehog-1295076.svg  lion-africa-1300564
 LAUNCHER_SVG = app/src/main/res/drawable/src/ic_launcher.svg
 
 
-all: assets icons
+LETTERS_PNG = app/src/main/res/drawable/src/ic_letters.png
+
+all: assets icons menu-icons
 
 assets:
 	$(foreach svg,$(SVGs),\
@@ -26,3 +28,11 @@ icons: $(LAUNCHER_SVG)
 	rsvg-convert --width=192 --height=192 -o app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png $(LAUNCHER_SVG)
 	rsvg-convert --width=512 --height=512 -o fastlane/metadata/android/en-US/images/icon.png     $(LAUNCHER_SVG)
 
+
+# Popup menu icons are drawn at their intrinsic size, so they need one bitmap
+# per density at 24dp rather than a single large drawable.
+menu-icons: $(LETTERS_PNG)
+	$(foreach d,mdpi:24 hdpi:36 xhdpi:48 xxhdpi:72 xxxhdpi:96,\
+		mkdir -p app/src/main/res/drawable-$(word 1,$(subst :, ,$(d))); \
+		convert $(LETTERS_PNG) -strip -resize $(word 2,$(subst :, ,$(d)))x$(word 2,$(subst :, ,$(d))) app/src/main/res/drawable-$(word 1,$(subst :, ,$(d)))/ic_letters.png; \
+	)
