@@ -16,4 +16,7 @@
     <string name="progress_reset_message">Möchtest du den Fortschritt für alle Buchstaben auf null zurücksetzen?</string>
     <string name="progress_reset_keep">Behalten</string>
     <string name="progress_reset_confirm">Zurücksetzen</string>
+    <string name="about_feature_request">Funktion wünschen</string>
+    <string name="feature_request_hint">Zum Öffnen länger gedrückt halten.</string>
+    <string name="no_browser">Kein Browser installiert</string>
 </resources>

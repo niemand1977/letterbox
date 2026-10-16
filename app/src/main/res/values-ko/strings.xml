@@ -16,4 +16,7 @@
     <string name="progress_reset_message">모든 글자의 진행 상황을 0으로 초기화하시겠습니까?</string>
     <string name="progress_reset_keep">유지</string>
     <string name="progress_reset_confirm">초기화</string>
+    <string name="about_feature_request">기능 요청</string>
+    <string name="feature_request_hint">길게 누르면 기능 요청 목록이 열려요.</string>
+    <string name="no_browser">브라우저가 설치되어 있지 않아요</string>
 </resources>

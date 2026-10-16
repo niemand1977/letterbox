@@ -3,11 +3,14 @@ package ch.cryptobit.letterbox
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.app.AlertDialog
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.Paint
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.net.Uri
 import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.text.method.LinkMovementMethod
@@ -21,6 +24,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.TextView
+import android.widget.Toast
 import android.widget.ToggleButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -51,6 +55,8 @@ const val PROGRESS_MAX_LEVEL = 5
 /* Levels decay by one per four weeks without seeing the letter, floored
  * at zero. */
 const val PROGRESS_DECAY_MS = 4L * 7 * 24 * 60 * 60 * 1000
+
+const val GITLAB_ISSUES_URL = "https://gitlab.com/muelli/letterbox/-/issues"
 
 class AnimalsOnTop : AppCompatActivity() {
 
@@ -390,10 +396,28 @@ class AnimalsOnTop : AppCompatActivity() {
         textView.setPadding(padding, padding, padding, padding)
         textView.text = HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_COMPACT)
         textView.movementMethod = LinkMovementMethod.getInstance()
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setView(textView)
             .setPositiveButton(android.R.string.ok, null)
+            .setNeutralButton(R.string.about_feature_request, null)
             .show()
+        /* The issue tracker opens only on a long press, so a child exploring
+         * the About dialog cannot wander into the browser in two taps. A
+         * short tap explains the gate to the adult. */
+        val requestButton = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
+        requestButton.setOnClickListener {
+            Toast.makeText(this, R.string.feature_request_hint, Toast.LENGTH_SHORT).show()
+        }
+        requestButton.setOnLongClickListener {
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(GITLAB_ISSUES_URL)))
+                dialog.dismiss()
+            } catch (e: ActivityNotFoundException) {
+                Log.w(TAG, "No browser can open $GITLAB_ISSUES_URL", e)
+                Toast.makeText(this, R.string.no_browser, Toast.LENGTH_SHORT).show()
+            }
+            true
+        }
     }
 
     /* Full-screen immersive mode: no status bar or navigation bar, so a

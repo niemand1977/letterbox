@@ -17,4 +17,7 @@
     <string name="progress_reset_message">Do you want to reset the progress for all letters to zero?</string>
     <string name="progress_reset_keep">Keep</string>
     <string name="progress_reset_confirm">Reset</string>
+    <string name="about_feature_request">Feature request</string>
+    <string name="feature_request_hint">Hold the button longer to open the feature requests.</string>
+    <string name="no_browser">No browser installed</string>
 </resources>
