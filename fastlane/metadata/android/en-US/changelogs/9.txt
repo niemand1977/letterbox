@@ -1,0 +1,3 @@
+- Choose which letters to practise: all of them, the ten most common, or just one.
+- Optional progress tracking: letters your child knows well come up less often, and progress fades gently after a few weeks without practice. It is stored only on the device.
+- Fixed a crash when opening About on Android 6.
