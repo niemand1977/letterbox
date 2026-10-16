@@ -1,0 +1,16 @@
+LetterBox est un jeu pour les jeunes enfants qui apprennent leurs lettres. Il montre une image, le plus souvent un animal, et trois lettres. Touche la lettre par laquelle commence le mot. Touche l'image pour entendre son nom.
+
+Après une mauvaise réponse, la même image revient pour que ton enfant puisse réessayer. Pas de score, pas de chronomètre, pas de pénalité.
+
+<b>Fonctionnalités</b>
+<ul>
+<li>Neuf langues : anglais, allemand, français, espagnol, italien, polonais, portugais du Brésil, japonais (hiragana) et coréen (hangul). La langue se choisit dans le menu, indépendamment de celle du système.</li>
+<li>Environ 70 images, dont plusieurs pour de nombreuses lettres, pour des parties variées.</li>
+<li>S'entraîner sur une sélection de lettres : toutes, les dix plus fréquentes ou une seule.</li>
+<li>Suivi des progrès en option : les lettres bien connues reviennent moins souvent. Après quelques semaines sans entraînement, les progrès s'estompent doucement et les lettres oubliées reviennent.</li>
+<li>Fonctionne avec un clavier physique : appuie sur 1, 2 ou 3, ou sur la lettre elle-même.</li>
+<li>Le bouton du menu peut être masqué jusqu'à la fermeture de l'application, pour que les petites mains ne changent pas les réglages par erreur. Un appui long dans le coin supérieur droit le fait réapparaître.</li>
+</ul>
+
+<b>Vie privée</b>
+LetterBox ne demande aucune autorisation et n'a pas accès à Internet. Pas de publicité, pas de pistage. Les progrès restent sur l'appareil et sont exclus des sauvegardes dans le cloud.

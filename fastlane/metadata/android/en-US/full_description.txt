@@ -1,2 +1,16 @@
-LetterBox is a game about animals and letters.
-It shows an animal and your task is to find the appropriate letter.
+LetterBox is a game for young children who are learning their letters. It shows a picture, usually an animal, and three letters. Tap the letter the word starts with. Tap the picture to hear its name.
+
+After a wrong answer, the same picture comes back so your child can try again. There are no scores, timers, or penalties.
+
+<b>Features</b>
+<ul>
+<li>Nine languages: English, German, French, Spanish, Italian, Polish, Brazilian Portuguese, Japanese (hiragana), and Korean (hangul). The language can be changed in the menu, independently of the system language.</li>
+<li>About 70 pictures, with several pictures for many letters, so rounds stay varied.</li>
+<li>Practise a selection of letters: all of them, the ten most common, or just one.</li>
+<li>Optional progress tracking: letters your child knows well come up less often. Progress fades gently after a few weeks without practice, so forgotten letters return.</li>
+<li>Works with a physical keyboard: press 1, 2, or 3, or the letter itself.</li>
+<li>The menu button can be hidden until the app is closed, so small hands do not change settings by accident. Press and hold the top-right corner to bring it back.</li>
+</ul>
+
+<b>Privacy</b>
+LetterBox requests no permissions and has no internet access. There are no ads and no tracking. Progress is stored only on the device and is excluded from cloud backups.
