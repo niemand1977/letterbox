@@ -16,4 +16,7 @@
     <string name="progress_reset_message">Vuoi azzerare i progressi di tutte le lettere?</string>
     <string name="progress_reset_keep">Conserva</string>
     <string name="progress_reset_confirm">Azzera</string>
+    <string name="about_feature_request">Suggerisci una funzione</string>
+    <string name="feature_request_hint">Tieni premuto per aprire le richieste di funzionalità.</string>
+    <string name="no_browser">Nessun browser installato</string>
 </resources>

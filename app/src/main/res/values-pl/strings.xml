@@ -16,4 +16,7 @@
     <string name="progress_reset_message">Czy chcesz zresetować postęp wszystkich liter do zera?</string>
     <string name="progress_reset_keep">Zachowaj</string>
     <string name="progress_reset_confirm">Resetuj</string>
+    <string name="about_feature_request">Zaproponuj funkcję</string>
+    <string name="feature_request_hint">Przytrzymaj dłużej, aby otworzyć zgłoszenia funkcji.</string>
+    <string name="no_browser">Brak zainstalowanej przeglądarki</string>
 </resources>

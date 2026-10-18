@@ -3,11 +3,14 @@ package ch.cryptobit.letterbox
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.app.AlertDialog
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.Paint
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.net.Uri
 import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.text.method.LinkMovementMethod
@@ -21,6 +24,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.TextView
+import android.widget.Toast
 import android.widget.ToggleButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -52,6 +56,8 @@ const val PROGRESS_MAX_LEVEL = 5
  * at zero. */
 const val PROGRESS_DECAY_MS = 4L * 7 * 24 * 60 * 60 * 1000
 
+const val GITLAB_ISSUES_URL = "https://gitlab.com/muelli/letterbox/-/issues"
+
 class AnimalsOnTop : AppCompatActivity() {
 
     companion object {
@@ -78,6 +84,10 @@ class AnimalsOnTop : AppCompatActivity() {
     // same button doesn't get it twice in a row (a child could learn the
     // position instead of the letter).
     private var previousButtonIndex: Int? = null
+
+    /* Tracks the drawable shown last round so a letter with several animals
+     * does not show the same picture twice in a row. */
+    private var previousDrawable: Int? = null
 
     // Resolved once at launch from the per-app locale (or the system locale
     // when none was picked): it decides which words/letters are used for the
@@ -262,6 +272,7 @@ class AnimalsOnTop : AppCompatActivity() {
 
     private fun loadRound() {
         updateLetterTextSize()
+        setButtonsVisible(true)
         val shuffledButtons = letterWidgets.shuffled().toMutableList()
         // Guarantee the correct answer doesn't land on the same physical
         // button as last round, regardless of how the shuffle came out.
@@ -280,7 +291,13 @@ class AnimalsOnTop : AppCompatActivity() {
         repeatedLetter = null
         previousLetter = chosenLetter
 
-        val chosenDrawable = letterMap[chosenLetter]!!.random()
+        /* Avoid showing the same animal twice in a row when the letter has
+         * multiple drawables; with only one drawable repetition is unavoidable. */
+        val drawables = letterMap[chosenLetter]!!
+        val chosenDrawable = (if (drawables.size > 1) {
+            drawables.filter { it != previousDrawable }
+        } else drawables).random()
+        previousDrawable = chosenDrawable
         currentWord = LanguageMaps.getWord(chosenDrawable, currentLanguage)
         imageWidget.setImageDrawable(
             ResourcesCompat.getDrawable(resources, chosenDrawable, null)
@@ -337,19 +354,36 @@ class AnimalsOnTop : AppCompatActivity() {
             recordAnswer(currentLanguage, chosenLetter, correct)
         }
 
-        soundPool.play(if (correct) soundYes else soundNo, oneF, oneF, 0, 0, oneF)
+        /* The feedback jingle plays well below full volume so it stays a
+         * subtle cue instead of dominating the spoken animal name. */
+        val feedbackVolume = oneF / 6f
+        soundPool.play(if (correct) soundYes else soundNo, feedbackVolume, feedbackVolume, 0, 0, oneF)
+
+        /* Speak the animal's name shortly after the feedback sound, but only
+         * after a correct answer, so the child is not confused by hearing the
+         * name while still learning the right letter. */
+        if (correct) {
+            handler.postDelayed({
+                currentWord?.let { word ->
+                    if (ttsReady) tts.speak(word, TextToSpeech.QUEUE_FLUSH, null, null)
+                }
+            }, 400)
+        }
 
         // Flash the tapped letter green (correct) or red (wrong)
         val flashColor = if (correct) Color.parseColor("#4CAF50") else Color.parseColor("#F44336")
         flashTextColor(tapped, flashColor)
 
         if (correct) {
-            // Correct answer: move on to a new letter after a short pause
-            handler.postDelayed({ loadRound() }, 800)
+            /* Pause long enough for the spoken word to finish, hide the
+             * buttons briefly, then move on to a new letter. */
+            handler.postDelayed({ setButtonsVisible(false) }, 1550)
+            handler.postDelayed({ loadRound() }, 1750)
         } else {
             // Wrong answer: repeat the same letter so the child gets another chance
             repeatedLetter = chosenLetter
-            handler.postDelayed({ loadRound() }, 400)
+            handler.postDelayed({ setButtonsVisible(false) }, 400)
+            handler.postDelayed({ loadRound() }, 600)
         }
     }
 
@@ -390,10 +424,28 @@ class AnimalsOnTop : AppCompatActivity() {
         textView.setPadding(padding, padding, padding, padding)
         textView.text = HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_COMPACT)
         textView.movementMethod = LinkMovementMethod.getInstance()
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setView(textView)
             .setPositiveButton(android.R.string.ok, null)
+            .setNeutralButton(R.string.about_feature_request, null)
             .show()
+        /* The issue tracker opens only on a long press, so a child exploring
+         * the About dialog cannot wander into the browser in two taps. A
+         * short tap explains the gate to the adult. */
+        val requestButton = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
+        requestButton.setOnClickListener {
+            Toast.makeText(this, R.string.feature_request_hint, Toast.LENGTH_SHORT).show()
+        }
+        requestButton.setOnLongClickListener {
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(GITLAB_ISSUES_URL)))
+                dialog.dismiss()
+            } catch (e: ActivityNotFoundException) {
+                Log.w(TAG, "No browser can open $GITLAB_ISSUES_URL", e)
+                Toast.makeText(this, R.string.no_browser, Toast.LENGTH_SHORT).show()
+            }
+            true
+        }
     }
 
     /* Full-screen immersive mode: no status bar or navigation bar, so a
